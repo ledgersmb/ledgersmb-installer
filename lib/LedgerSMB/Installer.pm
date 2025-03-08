@@ -3,17 +3,86 @@ package LedgerSMB::Installer;
 use v5.34;
 use experimental qw(signatures try);
 
-use Cwd;
+use Carp qw( croak );
+use CPAN::Meta::Requirements;
+use Cwd qw( getcwd );
+use File::Path qw( make_path remove_tree );
+use File::Spec;
 use Getopt::Long qw(GetOptionsFromArray);
+use HTTP::Tiny;
 
 use Log::Any qw($log);
 use Log::Any::Adapter;
+use Module::CPANfile;
 
 use LedgerSMB::Installer::Configuration;
 
+sub _compute_dep_pkgs($class, $dss, $installpath) {
+    my @types     = qw( requires recommends );
+    my @phases    = qw( runtime );
+    my $decl      = Module::CPANfile->load( File::Spec->catfile( $installpath, 'cpanfile' ) );
+    my $prereqs   = $decl->prereqs_with( map { $_->identifier } $decl->features ); # all features
+    my $effective = CPAN::Meta::Requirements->new;
+    for my $phase (@phases) {
+        for my $type (@types) {
+            $effective->add_requirements( $prereqs->requirements_for( $phase, $type ) );
+        }
+    }
+
+    my @mods = $effective->required_modules;
+    my %pkgs;
+    for my $mod (@mods) {
+        my $pkg = $dss->pkg_from_module( $mod );
+        $pkgs{$pkg} = 1 if $pkg;
+    }
+    delete $pkgs{perl};
+
+    return keys %pkgs;
+}
+
+sub _download($class, $installpath, $version) {
+    my $fn   = "ledgersmb-$version.tar.gz";
+    my $url  = $ENV{ARTEFACT_LOCATION} // "https://download.ledgersmb.org/f/Releases/$version/";
+    my $http = HTTP::Tiny->new;
+
+    do {
+        open( my $fh, '>', File::Spec->catfile($installpath, $fn))
+            or croak $log->fatal( "Unable to open output file $fn: $!" );
+        binmode $fh, ':raw';
+        my $r = $http->get(
+            "$url$fn",
+            {
+                data_callback => sub($data, $status) {
+                    print $fh $data;
+                }
+            });
+
+        if ($r->{status} == 599) {
+            croak $log->fatal( "Unable to request $url/$fn: " . $r->{content} );
+        }
+        elsif (not $r->{success}) {
+            croak $log->fatal( "Unable to request $url/$fn: $r->{status} - $r->{reason}" );
+        }
+    };
+
+    do {
+        my $r = $http->get( "$url$fn.asc" );
+        if ($r->{status} == 599) {
+            croak $log->fatal( "Unable to request $url/$fn: " . $r->{content} );
+        }
+        elsif (not $r->{success}) {
+            croak $log->fatal( "Unable to request $url/$fn: $r->{status} - $r->{reason}" );
+        }
+        else {
+            open( my $fh, '>', File::Spec->catfile($installpath, "$fn.asc"))
+                or croak $log->fatal( "Unable to open output file $fn.asc: $!" );
+            binmode $fh, ':raw';
+            print $fh $r->{content};
+        }
+    };
+}
+
 sub download($class, @args) {
-
-
 }
 
 sub install($class, @args) {
@@ -22,14 +91,36 @@ sub install($class, @args) {
     my $loglevel = 'info';
     my $locallib = 'local';
     my $installpath = 'ledgersmb';
-    my $force_compute_deps = 0;
+    my $syspkgs = 1;
     GetOptionsFromArray(
         \@args,
-        'force-compute-deps' => \$force_compute_deps,
+        'system-packages!'   => \$syspkgs,
         'log-level=s'        => \$loglevel,
         'verify!'            => \$verify,
         'version=s'          => \$version,
         );
+
+    # normalize $installpath (at least cpanm needs that)
+    if (not File::Spec->file_name_is_absolute( $installpath )) {
+        my @dirs = File::Spec->splitdir( $installpath );
+        if (@dirs) {
+            if ($dirs[0] ne File::Spec->curdir) {
+                $installpath = File::Spec->catdir( getcwd(), $installpath );
+                say $installpath;
+            }
+        }
+    }
+
+    # assume $locallib to be inside $installpath
+    if (not File::Spec->file_name_is_absolute( $locallib )) {
+        my @dirs = File::Spec->splitdir( $locallib );
+        if (@dirs == 1) {
+            $locallib = File::Spec->catdir( $installpath, $locallib );
+        }
+        else {
+            $locallib = File::Spec->catdir( getcwd(), $locallib );
+        }
+    }
 
     Log::Any::Adapter->set('Stdout', log_level => $loglevel);
 
@@ -55,7 +146,7 @@ sub install($class, @args) {
 
     my $deps;
     $deps = $dss->retrieve_precomputed_deps
-        unless $force_compute_deps;
+        if $syspkgs;
     unless ($deps) {
         $log->warn( "No precomputed dependencies available for this distro/version" );
         $log->info( "Configuring environment for dependency computation" );
@@ -65,6 +156,8 @@ sub install($class, @args) {
         compute_deps => defined($deps),
         install_deps => 1,
         );
+
+    my $archive = "ledgersmb-$version.tar.gz";
 
     # Generate script
     # 1. create installation directory
@@ -77,30 +170,36 @@ sub install($class, @args) {
     # 7. install CPAN dependencies (using cpanm & local::lib)
     # 8. generate startup script (set local::lib environment)
 
-    my @cmds;
-    $dss->mkdir( \@cmds, $installpath );
-    $dss->download( \@cmds, $version, $installpath );
-    my $archive = "$installpath/ledgersmb-$version.tar.gz";
-    $dss->verify_gpg( \@cmds, $archive )
-        if $verify;
-    $dss->untar( \@cmds, $archive, $installpath, strip_components => 1 );
-    $dss->rm( \@cmds, $archive );
+    $log->info( "Creating installation path $installpath" );
+    make_path( $installpath ); # croaks on fatal errors
 
-    my $computed_deps;
+    $log->info( "Downloading release tarball $archive" );
+    $class->_download( $installpath, $version );
+
+    #$log->info( "Verifying tarball against gpg public key & signature" );
+    #$dss->verify_gpg( \@cmds, $archive )
+    #    if $verify;
+
+    $log->info( "Extracting release tarball" );
+    $dss->untar( File::Spec->catfile( $installpath, $archive),
+                 $installpath,
+                 strip_components => 1 );
+
+    $log->info( "Removing extracted release tarball" );
+    remove_tree(               # croaks on fatal errors
+        map {
+            File::Spec->catfile( $installpath, $_ )
+        } ( $archive, "$archive.asc" ) );
+
     if (not $deps
         and $dss->{_have_pkgs}) {
-        $computed_deps = "$installpath/tmp/computed-deps";
-        $dss->compute_dep_packages( \@cmds, $installpath, $computed_deps );
+        $deps = [ $class->_compute_dep_pkgs( $dss, $installpath ) ];
     }
 
-    $dss->pkg_install( \@cmds, $deps, $computed_deps );
-    $dss->cpanm_install( \@cmds, $installpath, $locallib );
-    $dss->generate_startup( \@cmds, $installpath, $locallib );
-
-    say "SCRIPT:\n\n" . join("\n", @cmds);
-    open my $fh, '>', 'lsmb-inst';
-    say $fh join("\n", @cmds);
-    close $fh;
+    $dss->pkg_install( $deps )
+        if ($deps and $dss->{_have_pkgs});
+    $dss->cpanm_install( $installpath, $locallib );
+    $dss->generate_startup( $installpath, $locallib );
 
     return 0;
 }

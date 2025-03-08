@@ -3,6 +3,9 @@ package LedgerSMB::Installer::OS::unix;
 use v5.34;
 use experimental qw(try signatures);
 
+use Carp qw( croak );
+use File::Path qw( make_path );
+use HTTP::Tiny;
 use Log::Any qw($log);
 
 sub have_cmd($self, $cmd, $fatal = 1) {
@@ -39,61 +42,59 @@ sub validate_env($self, @args) {
     $self->have_cmd('gpg');      # fatal
 }
 
-sub cpanm_install($self, $cmds, $installpath, $locallib) {
+sub cpanm_install($self, $installpath, $locallib) {
     unless ($self->{cmd}->{cpanm}) {
-        $self->mkdir( $cmds, "$installpath/tmp" );
+        make_path( File::Spec->catfile( $installpath, 'tmp' ) );
 
-        if ($self->{cmd}->{curl}) {
-            push $cmds->@*, (
-                "$self->{cmd}->{curl} -sL https://cpanmin.us/ --output-dir $installpath/tmp -o cpanm",
-                );
+        my $http = HTTP::Tiny->new;
+        my $r    = $http->get( 'https://cpanmin.us/' );
+        if ($r->{status} == 599) {
+            croak $log->fatal( "Unable to request https://cpanmin.us/: " . $r->{content} );
         }
-        elsif ($self->{cmd}->{wget}) {
-            push $cmds->@*, (
-                "$self->{cmd}->{wget} --quiet -O $installpath/tmp/cpanm https://cpanmin.us/",
-                );
+        elsif (not $r->{success}) {
+            croak $log->fatal( "Unable to request https://cpanmin.us/: $r->{status} - $r->{reason}" );
         }
-        push $cmds->@*,
-            "$self->{cmd}->{chmod} +x '$installpath/tmp/cpanm'";
+        else {
+            my $cpanm = File::Spec->catfile( $installpath, 'tmp', 'cpanm' );
+            open( my $fh, '>', $cpanm )
+                or croak $log->fatal( "Unable to open output file tmp/cpanm" );
+            binmode $fh, ':raw';
+            print $fh $r->{content};
+            close( $fh ) or warn $log->warning( "Failure closing file tmp/cpanm" );
+            chmod( 0755, $cpanm ) or warn $log->warning( "Failure making tmp/cpanm executable" );
+            $self->{cmd}->{cpanm} = $cpanm;
+        }
 
-        $self->{cmd}->{cpanm} = "$installpath/tmp/cpanm";
     }
-    push $cmds->@*, "$self->{cmd}->{cpanm} --notest --with-all-features --local-lib '$locallib' --installdeps '$installpath'";
+
+    my @cmd = (
+        $self->{cmd}->{cpanm},
+        '--notest',
+        '--with-all-features',
+        '--local-lib', $locallib,
+        '--installdeps', "$installpath"
+        );
+
+    $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
+    system(@cmd) == 0
+        or croak $log->fatal( "Failure running cpanm - exit code: $?" );
 }
 
-sub download($self, $cmds, $version, $installpath) {
-    my $fn = "ledgersmb-$version.tar.gz";
-    my $url = "https://download.ledgersmb.org/f/Releases/$version";
-
-    if ($self->{cmd}->{curl}) {
-        push $cmds->@*, (
-            "$self->{cmd}->{curl} -sL $url/$fn --output-dir $installpath --output $fn",
-            "$self->{cmd}->{curl} -sL $url/$fn.asc --output-dir $installpath --output $fn.asc"
-            );
-    }
-    elsif ($self->{cmd}->{wget}) {
-        push $cmds->@*, (
-            "$self->{cmd}->{wget} --quiet -O $installpath/$fn $url/$fn",
-            "$self->{cmd}->{wget} --quiet -O $installpath/$fn.asc $url/$fn.asc"
-            );
-    }
+sub pkg_from_module($self, $mod) {
+    croak $log->fatal( 'Generic Unix support does not include package installers' );
 }
 
-sub mkdir($self, $cmds, $path) {
-    push $cmds->@*, "$self->{cmd}->{mkdir} -p '$path'";
-}
-
-sub pkg_install($self, $cmds, $pkgs) {
+sub pkg_install($self, $pkgs) {
     croak $log->error( 'Generic linux support does not include package installers' );
 }
 
-sub rm($self, $cmds, $file) {
-    push $cmds->@*, "$self->{cmd}->{rm} '$file'";
-}
-
-sub untar($self, $cmds, $tar, $target, %options) {
-    my $strip = $options{strip_components} ? "--strip-components $options{strip_components}" : '';
-    push $cmds->@*, "$self->{cmd}->{tar} xzf '$tar' -C '$target' $strip";
+sub untar($self, $tar, $target, %options) {
+    my @cmd = ($self->{cmd}->{tar}, 'xzf', $tar, '-C', $target);
+    push @cmd, ('--strip-components', $options{strip_components})
+        if $options{strip_components};
+    $log->debug( 'system(): ' . join(' ', map { "'$_'" } @cmd ) );
+    system(@cmd) == 0
+        or croak $log->fatal( "Failure executing tar: $!" );
 }
 
 sub verify_gpg($self, $cmds, $file) {
