@@ -22,8 +22,12 @@ sub new($class, %args) {
 
 sub retrieve_precomputed_deps($self) {
     my $http = HTTP::Tiny->new;
+    my $arch = `$self->{cmd}->{dpkg} --print-architecture`;
+    chomp($arch);
     my $url  = $self->{_config}->dependency_url(
-        $self->{_distro}->{ID}, $self->{_distro}->{VERSION_CODENAME}
+        $self->{_distro}->{ID},
+        $self->{_distro}->{VERSION_CODENAME},
+        $arch
         );
 
     $log->info( "Retrieving dependency listing from $url" );
@@ -77,6 +81,7 @@ sub validate_env($self, %args) {
     $self->SUPER::validate_env(
         %args,
         );
+    $self->have_cmd( 'dpkg', 1 ); # dpkg --print-architecture
     $self->have_cmd( 'apt-get', 1 ); # required to install dependencies
     $self->have_cmd( 'apt-file', not $self->{_have_deps} ); # required for computation of dependencies
     $self->have_cmd( 'dh-make-perl', not $self->{_have_deps} );

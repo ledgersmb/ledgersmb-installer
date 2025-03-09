@@ -9,9 +9,10 @@ sub new( $class, %args ) {
     }, $class;
 }
 
-sub dependency_url($self, $distro, $distro_version = '') {
+sub dependency_url($self, $distro, $distro_version = '', $arch = '') {
     $distro_version .= '-' if $distro_version;
-    return "https://download.ledgersmb.org/f/dependencies/$distro/$distro_version$self->{_version}.json" ;
+    $arch .= '-' if $arch;
+    return "https://download.ledgersmb.org/f/dependencies/$distro/$distro_version$arch$self->{_version}.json" ;
 }
 
 1;
