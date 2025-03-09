@@ -22,7 +22,7 @@ sub new($class, %args) {
 
 sub retrieve_precomputed_deps($self) {
     my $http = HTTP::Tiny->new;
-    my $arch = `$self->{cmd}->{dpkg} --print-architecture`;
+    my $arch = `dpkg --print-architecture`;
     chomp($arch);
     my $url  = $self->{_config}->dependency_url(
         $self->{_distro}->{ID},
