@@ -46,11 +46,13 @@ sub retrieve_precomputed_deps($self) {
 
 sub pkg_from_module( $self, $mod ) {
     if (not state $init = 0) {
+        $log->info( "Updating 'apt-file' packages index" );
         system($self->{cmd}->{'apt-file'}, 'update') == 0
             or croak $log->fatal( "Unable to update apt-file's index: $!" );
         $init = 1;
     }
-    my $pkg = `$self->{cmd}->{'dh-make-perl'} --no-verbose locate "\mod" 2>/dev/null`;
+    $log->debug( "Looking up package for $mod" );
+    my $pkg = `$self->{cmd}->{'dh-make-perl'} --no-verbose locate "$mod" 2>/dev/null`;
     if ($?) {
         return '';
     }
@@ -58,7 +60,9 @@ sub pkg_from_module( $self, $mod ) {
         return '';
     }
     elsif ($pkg =~ m/is in (\S+) package/) {
-        return $1;
+        my $rv = $1;
+        $log->trace( "Module '$mod' found in package $1" );
+        return $rv;
     }
     return '';
 }

@@ -197,6 +197,7 @@ sub install($class, @args) {
 
     if (not $deps
         and $dss->{_have_pkgs}) {
+        $log->info( "Computing O/S packages for declared dependencies" );
         $deps = [ $class->_compute_dep_pkgs( $dss, $installpath ) ];
     }
 
