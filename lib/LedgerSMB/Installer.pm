@@ -9,6 +9,7 @@ use File::Path qw( make_path remove_tree );
 use File::Spec;
 use Getopt::Long qw(GetOptionsFromArray);
 use HTTP::Tiny;
+use JSON::PP;
 
 use Log::Any qw($log);
 use Log::Any::Adapter;
@@ -61,7 +62,7 @@ sub _compute_dep_pkgs($class, $dss, $installpath) {
     }
     delete $pkgs{perl};
 
-    return keys %pkgs;
+    return sort keys %pkgs;
 }
 
 sub _download($class, $installpath, $version) {
@@ -107,6 +108,55 @@ sub _download($class, $installpath, $version) {
 }
 
 sub compute($class, @args) {
+    my $config = LedgerSMB::Installer::Configuration->new(
+        # defaults:
+        installpath => 'ledgersmb',
+        locallib => 'local',
+        loglevel => 'info',
+        );
+
+    GetOptionsFromArray(
+        \@args,
+        'target=s'           => sub { $config->installpath( $_[1] ) },
+        'local-lib=s'        => sub { $config->locallib( $_[1] ) },
+        'log-level=s'        => sub { $config->loglevel( $_[1] ) },
+        'version=s'          => sub { $config->version( $_[1] ) },
+        );
+
+    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
+
+    # normalize $installpath (at least cpanm needs that)
+    # assume $locallib to be inside $installpath
+    $config->normalize_paths;
+
+    $log->info( "Detected O/S: $^O" );
+    my $oss_class = "LedgerSMB::Installer::OS::$^O";
+    try {
+        eval "require $oss_class"
+            or die "Unable to load $oss_class: $@";
+    }
+    catch ($e) {
+        say "$e";
+        say "No support for $^O";
+        exit 2;
+    }
+
+    my $oss = $oss_class->new( config => $config ); # operating system support instance
+    $log->debug( "Detecting distribution" );
+    my $dss = $oss->detect_dss(); # detect and return distribution support instance
+
+    my @remarks = $dss->validate_env(
+        compute_deps => 1,
+        install_deps => 1,
+        );
+
+    $class->_build_install_tree( $dss, $config->installpath, $config->version );
+
+    $log->info( "Computing O/S packages for declared dependencies" );
+    my $deps = [ $class->_compute_dep_pkgs( $dss, $config->installpath ) ];
+
+    my $json = JSON::PP->new->utf8;
+    say $json->encode( $deps );
 }
 
 sub download($class, @args) {
