@@ -129,6 +129,8 @@ sub install($class, @args) {
         'version=s'          => sub { $config->version( $_[1] ) },
         );
 
+    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
+
     # normalize $installpath (at least cpanm needs that)
     if (not File::Spec->file_name_is_absolute( $installpath )) {
         my @dirs = File::Spec->splitdir( $installpath );
@@ -149,8 +151,6 @@ sub install($class, @args) {
             $locallib = File::Spec->catdir( getcwd(), $locallib );
         }
     }
-
-    Log::Any::Adapter->set('Stdout', log_level => $loglevel);
 
     $log->info( "Detected O/S: $^O" );
     my $oss_class = "LedgerSMB::Installer::OS::$^O";
@@ -201,8 +201,10 @@ sub install($class, @args) {
         $deps = [ $class->_compute_dep_pkgs( $dss, $installpath ) ];
     }
 
-    $dss->pkg_install( $deps )
-        if ($deps and $dss->{_have_pkgs});
+    if ($deps and $dss->{_have_pkgs}) {
+        $log->info( "Installing O/S packages: " . join(' ', $deps->@*) );
+        $dss->pkg_install( $deps )
+    }
     $dss->cpanm_install( $installpath, $locallib );
     $dss->generate_startup( $installpath, $locallib );
 
