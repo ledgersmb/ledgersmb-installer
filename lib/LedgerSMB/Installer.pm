@@ -114,18 +114,19 @@ sub download($class, @args) {
 }
 
 sub install($class, @args) {
-    my $version;
     my $verify = 1;
     my $loglevel = 'info';
     my $locallib = 'local';
     my $installpath = 'ledgersmb';
     my $syspkgs = 1;
+    my $config = LedgerSMB::Installer::Configuration->new;
+
     GetOptionsFromArray(
         \@args,
         'system-packages!'   => \$syspkgs,
-        'log-level=s'        => \$loglevel,
+        'log-level=s'        => sub { $config->loglevel( $_[1] ) },
         'verify!'            => \$verify,
-        'version=s'          => \$version,
+        'version=s'          => sub { $config->version( $_[1] ) },
         );
 
     # normalize $installpath (at least cpanm needs that)
@@ -150,10 +151,6 @@ sub install($class, @args) {
     }
 
     Log::Any::Adapter->set('Stdout', log_level => $loglevel);
-
-    my $config = LedgerSMB::Installer::Configuration->new(
-        version => $version,
-        );
 
     $log->info( "Detected O/S: $^O" );
     my $oss_class = "LedgerSMB::Installer::OS::$^O";
@@ -196,7 +193,7 @@ sub install($class, @args) {
     # 7. install CPAN dependencies (using cpanm & local::lib)
     # 8. generate startup script (set local::lib environment)
 
-    $class->_build_install_tree( $dss, $installpath, $version );
+    $class->_build_install_tree( $dss, $installpath, $config->version );
 
     if (not $deps
         and $dss->{_have_pkgs}) {
