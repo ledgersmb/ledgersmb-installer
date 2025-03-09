@@ -2,30 +2,31 @@ package LedgerSMB::Installer::OS::unix;
 
 use v5.34;
 use experimental qw(try signatures);
+use parent qw(LedgerSMB::Installer::OS);
 
 use Carp qw( croak );
 use File::Path qw( make_path );
+use File::Spec;
 use HTTP::Tiny;
 use Log::Any qw($log);
 
-sub have_cmd($self, $cmd, $fatal = 1) {
-    my $executable = `which "$cmd" 2>/dev/null`;
-    chomp $executable;
-    if ($executable) {
-        $self->{cmd} //= {};
-        $self->{cmd}->{$cmd} = $executable;
-        $log->info( "Command $cmd found as $executable" );
-    }
-    elsif (not $fatal) {
-        $log->info( "Command $cmd not found" );
-    }
-    else {
-        die "Missing '$cmd'";
-    }
-    return $executable;
+
+sub pg_config_extra_paths($self) {
+    my @paths = qw(
+        /opt/pgsql/bin
+        /usr/lib/postgresql/bin
+        /usr/local/pgsql/bin
+        /usr/local/postgres/bin
+        );
+    push @paths, File::Spec->catdir( $ENV{POSTGRES_HOME}, 'bin' )
+        if $ENV{POSTGRES_HOME};
+    push @paths, File::Spec->catdir( $ENV{POSTGRES_LIB}, File::Spec->updir, 'bin' )
+        if $ENV{POSTTGRES_LIB};
+    return @paths;
 }
 
 sub validate_env($self, @args) {
+    $self->SUPER::validate_env( @args );
     $self->have_cmd('cpanm', 0);
     $self->have_cmd('wget',  0);
     $self->have_cmd('curl',  0);
