@@ -107,6 +107,9 @@ sub _download($class, $installpath, $version) {
     };
 }
 
+sub compute($class, @args) {
+}
+
 sub download($class, @args) {
 }
 
@@ -208,9 +211,23 @@ sub install($class, @args) {
     return 0;
 }
 
-sub run($class, @args) {
-
-    return $class->install( @args );
+sub run($class, $cmd, @args) {
+    if ($cmd =~ m/^-/) { # option(s)
+        unshift @args, $cmd;
+        $cmd = 'install';
+    }
+    if ($cmd eq 'compute') {
+        return $class->compute( @args );
+    }
+    elsif ($cmd eq 'download') {
+        return $class->download( @args );
+    }
+    if ($cmd eq 'install') {
+        return $class->install( @args );
+    }
+    else {
+        die "Unknown command 'cmd'\n";
+    }
 }
 
 
