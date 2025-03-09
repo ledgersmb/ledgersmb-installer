@@ -5,7 +5,6 @@ use experimental qw(signatures try);
 
 use Carp qw( croak );
 use CPAN::Meta::Requirements;
-use Cwd qw( getcwd );
 use File::Path qw( make_path remove_tree );
 use File::Spec;
 use Getopt::Long qw(GetOptionsFromArray);
@@ -115,15 +114,21 @@ sub download($class, @args) {
 
 sub install($class, @args) {
     my $verify = 1;
-    my $loglevel = 'info';
     my $locallib = 'local';
     my $installpath = 'ledgersmb';
     my $syspkgs = 1;
-    my $config = LedgerSMB::Installer::Configuration->new;
+    my $config = LedgerSMB::Installer::Configuration->new(
+        # defaults:
+        installpath => 'ledgersmb',
+        locallib => 'local',
+        loglevel => 'info',
+        );
 
     GetOptionsFromArray(
         \@args,
         'system-packages!'   => \$syspkgs,
+        'target=s'           => sub { $config->installpath( $_[1] ) },
+        'local-lib=s'        => sub { $config->locallib( $_[1] ) },
         'log-level=s'        => sub { $config->loglevel( $_[1] ) },
         'verify!'            => \$verify,
         'version=s'          => sub { $config->version( $_[1] ) },
@@ -132,25 +137,8 @@ sub install($class, @args) {
     Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
     # normalize $installpath (at least cpanm needs that)
-    if (not File::Spec->file_name_is_absolute( $installpath )) {
-        my @dirs = File::Spec->splitdir( $installpath );
-        if (@dirs) {
-            if ($dirs[0] ne File::Spec->curdir) {
-                $installpath = File::Spec->catdir( getcwd(), $installpath );
-            }
-        }
-    }
-
     # assume $locallib to be inside $installpath
-    if (not File::Spec->file_name_is_absolute( $locallib )) {
-        my @dirs = File::Spec->splitdir( $locallib );
-        if (@dirs == 1) {
-            $locallib = File::Spec->catdir( $installpath, $locallib );
-        }
-        else {
-            $locallib = File::Spec->catdir( getcwd(), $locallib );
-        }
-    }
+    $config->normalize_paths;
 
     $log->info( "Detected O/S: $^O" );
     my $oss_class = "LedgerSMB::Installer::OS::$^O";
@@ -193,20 +181,20 @@ sub install($class, @args) {
     # 7. install CPAN dependencies (using cpanm & local::lib)
     # 8. generate startup script (set local::lib environment)
 
-    $class->_build_install_tree( $dss, $installpath, $config->version );
+    $class->_build_install_tree( $dss, $config->installpath, $config->version );
 
     if (not $deps
         and $dss->{_have_pkgs}) {
         $log->info( "Computing O/S packages for declared dependencies" );
-        $deps = [ $class->_compute_dep_pkgs( $dss, $installpath ) ];
+        $deps = [ $class->_compute_dep_pkgs( $dss, $config->installpath ) ];
     }
 
     if ($deps and $dss->{_have_pkgs}) {
         $log->info( "Installing O/S packages: " . join(' ', $deps->@*) );
         $dss->pkg_install( $deps )
     }
-    $dss->cpanm_install( $installpath, $locallib );
-    $dss->generate_startup( $installpath, $locallib );
+    $dss->cpanm_install( $config->installpath, $config->locallib );
+    $dss->generate_startup( $config->installpath, $config->locallib );
 
     return 0;
 }
