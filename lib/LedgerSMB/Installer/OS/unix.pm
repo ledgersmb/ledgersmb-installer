@@ -35,9 +35,6 @@ sub validate_env($self, @args) {
     $self->have_cmd('cpp',   0); # might be used during dist-installation
     $self->have_cmd('c++',   0); # might be used during dist-installation
     $self->have_cmd('gzip');     # fatal, used by 'tar'
-    $self->have_cmd('mkdir');    # fatal
-    $self->have_cmd('chmod');    # fatal
-    $self->have_cmd('rm');       # fatal
     $self->have_cmd('tar');      # fatal
     $self->have_cmd('make');     # fatal
     $self->have_cmd('gpg');      # fatal
