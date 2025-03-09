@@ -9,9 +9,9 @@ use Symbol;
 
 sub new( $class, %args ) {
     return bless {
-        _installpath => $args{installpath},
-        _locallib => $args{locallib},
-        _loglevel => $args{loglevel},
+        _installpath => $args{installpath} // 'ledgersmb',
+        _locallib => $args{locallib} // 'local',
+        _loglevel => $args{loglevel} // 'info',
         _version => $args{version}
     }, $class;
 }

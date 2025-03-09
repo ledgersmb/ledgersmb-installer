@@ -108,12 +108,7 @@ sub _download($class, $installpath, $version) {
 }
 
 sub compute($class, @args) {
-    my $config = LedgerSMB::Installer::Configuration->new(
-        # defaults:
-        installpath => 'ledgersmb',
-        locallib => 'local',
-        loglevel => 'info',
-        );
+    my $config = LedgerSMB::Installer::Configuration->new;
 
     GetOptionsFromArray(
         \@args,
@@ -170,12 +165,7 @@ sub download($class, @args) {
 
 sub install($class, @args) {
     my $syspkgs = 1;
-    my $config = LedgerSMB::Installer::Configuration->new(
-        # defaults:
-        installpath => 'ledgersmb',
-        locallib => 'local',
-        loglevel => 'info',
-        );
+    my $config = LedgerSMB::Installer::Configuration->new;
 
     GetOptionsFromArray(
         \@args,
