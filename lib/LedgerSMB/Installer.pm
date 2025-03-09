@@ -17,6 +17,31 @@ use Module::CPANfile;
 
 use LedgerSMB::Installer::Configuration;
 
+sub _build_install_tree($class, $dss, $installpath, $version) {
+    my $archive = "ledgersmb-$version.tar.gz";
+
+    $log->info( "Creating installation path $installpath" );
+    make_path( $installpath ); # croaks on fatal errors
+
+    $log->info( "Downloading release tarball $archive" );
+    $class->_download( $installpath, $version );
+
+    #$log->info( "Verifying tarball against gpg public key & signature" );
+    #$dss->verify_gpg( \@cmds, $archive )
+    #    if $verify;
+
+    $log->info( "Extracting release tarball" );
+    $dss->untar( File::Spec->catfile( $installpath, $archive),
+                 $installpath,
+                 strip_components => 1 );
+
+    $log->info( "Removing extracted release tarball" );
+    remove_tree(               # croaks on fatal errors
+        map {
+            File::Spec->catfile( $installpath, $_ )
+        } ( $archive, "$archive.asc" ) );
+}
+
 sub _compute_dep_pkgs($class, $dss, $installpath) {
     my @types     = qw( requires recommends );
     my @phases    = qw( runtime );
@@ -106,7 +131,6 @@ sub install($class, @args) {
         if (@dirs) {
             if ($dirs[0] ne File::Spec->curdir) {
                 $installpath = File::Spec->catdir( getcwd(), $installpath );
-                say $installpath;
             }
         }
     }
@@ -157,39 +181,19 @@ sub install($class, @args) {
         install_deps => 1,
         );
 
-    my $archive = "ledgersmb-$version.tar.gz";
-
     # Generate script
-    # 1. create installation directory
-    # 2. download tarball
-    # 3. unpack tarball
-    # 4. delete tarball
+    # 1. build install path:
+    #    a. create installation directory
+    #    b. download tarball
+    #    c. unpack tarball
+    #    d. delete tarball
     # in case of missing precomputed deps:
     #   5. compute dependencies (distro packages)
     # 6. install (pre)computed dependencies (distro packages)
     # 7. install CPAN dependencies (using cpanm & local::lib)
     # 8. generate startup script (set local::lib environment)
 
-    $log->info( "Creating installation path $installpath" );
-    make_path( $installpath ); # croaks on fatal errors
-
-    $log->info( "Downloading release tarball $archive" );
-    $class->_download( $installpath, $version );
-
-    #$log->info( "Verifying tarball against gpg public key & signature" );
-    #$dss->verify_gpg( \@cmds, $archive )
-    #    if $verify;
-
-    $log->info( "Extracting release tarball" );
-    $dss->untar( File::Spec->catfile( $installpath, $archive),
-                 $installpath,
-                 strip_components => 1 );
-
-    $log->info( "Removing extracted release tarball" );
-    remove_tree(               # croaks on fatal errors
-        map {
-            File::Spec->catfile( $installpath, $_ )
-        } ( $archive, "$archive.asc" ) );
+    $class->_build_install_tree( $dss, $installpath, $version );
 
     if (not $deps
         and $dss->{_have_pkgs}) {
