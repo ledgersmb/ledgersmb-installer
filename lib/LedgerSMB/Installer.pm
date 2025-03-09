@@ -125,6 +125,12 @@ sub compute($class, @args) {
 
     Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
+    if (@args != 1) {
+        die "Incorrect number of arguments";
+    }
+    open( my $out, '>:encoding(UTF-8)', $args[0] )
+        or die "Unable to open output file '$args[0]': $!";
+
     # normalize $installpath (at least cpanm needs that)
     # assume $locallib to be inside $installpath
     $config->normalize_paths;
@@ -156,7 +162,7 @@ sub compute($class, @args) {
     my $deps = [ $class->_compute_dep_pkgs( $dss, $config->installpath ) ];
 
     my $json = JSON::PP->new->utf8;
-    say $json->encode( $deps );
+    say $out $json->encode( $deps );
 }
 
 sub download($class, @args) {
