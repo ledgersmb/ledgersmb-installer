@@ -107,6 +107,24 @@ sub _download($class, $installpath, $version) {
     };
 }
 
+sub _load_dist_support($class, $config) {
+    $log->info( "Detected O/S: $^O" );
+    my $oss_class = "LedgerSMB::Installer::OS::$^O";
+    try {
+        eval "require $oss_class"
+            or die "Unable to load $oss_class: $@";
+    }
+    catch ($e) {
+        say "$e";
+        say "No support for $^O";
+        exit 2;
+    }
+
+    my $oss = $oss_class->new( config => $config ); # operating system support instance
+    $log->debug( "Detecting distribution" );
+    return $oss->detect_dss(); # detect and return distribution support instance
+}
+
 sub compute($class, @args) {
     my $config = LedgerSMB::Installer::Configuration->new;
 
@@ -130,22 +148,7 @@ sub compute($class, @args) {
     # assume $locallib to be inside $installpath
     $config->normalize_paths;
 
-    $log->info( "Detected O/S: $^O" );
-    my $oss_class = "LedgerSMB::Installer::OS::$^O";
-    try {
-        eval "require $oss_class"
-            or die "Unable to load $oss_class: $@";
-    }
-    catch ($e) {
-        say "$e";
-        say "No support for $^O";
-        exit 2;
-    }
-
-    my $oss = $oss_class->new( config => $config ); # operating system support instance
-    $log->debug( "Detecting distribution" );
-    my $dss = $oss->detect_dss(); # detect and return distribution support instance
-
+    my $dss = $class->_load_dist_support( $config );
     my @remarks = $dss->validate_env(
         compute_deps => 1,
         install_deps => 1,
@@ -183,22 +186,7 @@ sub install($class, @args) {
     # assume $locallib to be inside $installpath
     $config->normalize_paths;
 
-    $log->info( "Detected O/S: $^O" );
-    my $oss_class = "LedgerSMB::Installer::OS::$^O";
-    try {
-        eval "require $oss_class"
-            or die "Unable to load $oss_class: $@";
-    }
-    catch ($e) {
-        say "$e";
-        say "No support for $^O";
-        exit 2;
-    }
-
-    my $oss = $oss_class->new( config => $config ); # operating system support instance
-    $log->debug( "Detecting distribution" );
-    my $dss = $oss->detect_dss(); # detect and return distribution support instance
-
+    my $dss = $class->_load_dist_support( $config );
     my $deps;
     $deps = $dss->retrieve_precomputed_deps
         if $syspkgs;
