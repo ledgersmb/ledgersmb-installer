@@ -113,9 +113,6 @@ sub download($class, @args) {
 }
 
 sub install($class, @args) {
-    my $verify = 1;
-    my $locallib = 'local';
-    my $installpath = 'ledgersmb';
     my $syspkgs = 1;
     my $config = LedgerSMB::Installer::Configuration->new(
         # defaults:
@@ -130,7 +127,7 @@ sub install($class, @args) {
         'target=s'           => sub { $config->installpath( $_[1] ) },
         'local-lib=s'        => sub { $config->locallib( $_[1] ) },
         'log-level=s'        => sub { $config->loglevel( $_[1] ) },
-        'verify!'            => \$verify,
+        'verify-sig!'        => sub { $config->verify_sig( $_[1] ) },
         'version=s'          => sub { $config->version( $_[1] ) },
         );
 

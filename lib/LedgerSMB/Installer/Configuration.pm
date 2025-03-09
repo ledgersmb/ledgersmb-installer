@@ -45,7 +45,7 @@ sub normalize_paths($self) {
 }
 
 
-for my $acc (qw( installpath locallib loglevel version )) {
+for my $acc (qw( installpath locallib loglevel verify_sig version )) {
     my $ref = qualify_to_ref $acc;
     *{$ref} = sub($self, $arg = undef) {
         $self->{"_$acc"} = $arg
