@@ -43,3 +43,4 @@ inc/
 # plx directories
 /.plx/
 /devel/
+/dev/plx

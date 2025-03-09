@@ -1,0 +1,6 @@
+#!/bin/bash
+
+wget https://raw.githubusercontent.com/shadowcat-mst/plx/master/bin/plx-packed -O dev/plx
+chmod +x dev/plx
+dev/plx --init
+dev/plx --cpanm -ldevel --notest --with-develop --with-test --with-build --installdeps .
