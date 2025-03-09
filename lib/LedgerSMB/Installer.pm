@@ -53,7 +53,7 @@ sub _compute_dep_pkgs($class, $dss, $installpath) {
         }
     }
 
-    my @mods = $effective->required_modules;
+    my @mods = sort { lc($a) cmp lc($b) } $effective->required_modules;
     my %pkgs;
     for my $mod (@mods) {
         my $pkg = $dss->pkg_from_module( $mod );
