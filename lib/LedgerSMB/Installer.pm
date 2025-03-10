@@ -159,8 +159,9 @@ sub compute($class, @args) {
     $log->info( "Computing O/S packages for declared dependencies" );
     my $deps = [ $class->_compute_dep_pkgs( $dss, $config->installpath ) ];
 
-    my $json = JSON::PP->new->utf8;
-    say $out $json->encode( $deps );
+    my $json = JSON::PP->new->utf8->canonical;
+    say $out $json->encode( { identifier => $dss->dependency_packages_identifier,
+                              packages => $deps } );
 }
 
 sub download($class, @args) {

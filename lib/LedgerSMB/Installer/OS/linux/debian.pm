@@ -26,15 +26,14 @@ sub retrieve_precomputed_deps($self) {
     chomp($arch);
     my $url  = $self->{_config}->dependency_url(
         $self->{_distro}->{ID},
-        $self->{_distro}->{VERSION_CODENAME},
-        $arch
+        $self->dependency_packages_identifier
         );
 
     $log->info( "Retrieving dependency listing from $url" );
     my $r = $http->get( $url );
     if ($r->{success}) {
         $self->{_have_deps} = 1;
-        return JSON::PP->new->utf8->decode( $r->{content} );
+        return JSON::PP->new->utf8->decode( $r->{content} )->{packages};
     }
     elsif ($r->{status} == 599) {
         die $log->fatal(
@@ -42,6 +41,12 @@ sub retrieve_precomputed_deps($self) {
             );
     }
     return;
+}
+
+sub dependency_packages_identifier($self) {
+    my $arch = `dpkg --print-architecture`;
+    chomp($arch);
+    return "$self->{_distro}->{ID}-$self->{_distro}->{VERSION_CODENAME}-$arch";
 }
 
 sub pkg_from_module( $self, $mod ) {

@@ -16,10 +16,8 @@ sub new( $class, %args ) {
     }, $class;
 }
 
-sub dependency_url($self, $distro, $distro_version = '', $arch = '') {
-    $distro_version .= '-' if $distro_version;
-    $arch .= '-' if $arch;
-    return "https://download.ledgersmb.org/f/dependencies/$distro/$distro_version$arch$self->{_version}.json" ;
+sub dependency_url($self, $distro, $id) {
+    return "https://download.ledgersmb.org/f/dependencies/$distro/$id.json" ;
 }
 
 sub normalize_paths($self) {
