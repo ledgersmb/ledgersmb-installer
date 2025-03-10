@@ -136,6 +136,10 @@ sub compute($class, @args) {
         'version=s'          => sub { $config->version( $_[1] ) },
         );
 
+    # normalize $installpath (at least cpanm needs that)
+    # assume $locallib to be inside $installpath
+    $config->normalize_paths;
+
     Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
     if (@args != 1) {
@@ -143,10 +147,6 @@ sub compute($class, @args) {
     }
     open( my $out, '>:encoding(UTF-8)', $args[0] )
         or die "Unable to open output file '$args[0]': $!";
-
-    # normalize $installpath (at least cpanm needs that)
-    # assume $locallib to be inside $installpath
-    $config->normalize_paths;
 
     my $dss = $class->_load_dist_support( $config );
     my @remarks = $dss->validate_env(
@@ -180,11 +180,11 @@ sub install($class, @args) {
         'version=s'          => sub { $config->version( $_[1] ) },
         );
 
-    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
-
     # normalize $installpath (at least cpanm needs that)
     # assume $locallib to be inside $installpath
     $config->normalize_paths;
+
+    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
     my $dss = $class->_load_dist_support( $config );
     my $deps;
