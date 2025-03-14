@@ -9,10 +9,15 @@ use Symbol;
 
 sub new( $class, %args ) {
     return bless {
+        _assume_yes  => $args{assume_yes} // 0,
         _installpath => $args{installpath} // 'ledgersmb',
-        _locallib => $args{locallib} // 'local',
-        _loglevel => $args{loglevel} // 'info',
-        _version => $args{version}
+        _locallib    => $args{locallib} // 'local',
+        _loglevel    => $args{loglevel} // 'info',
+        _prep_env    => $args{prepare_env},
+        _sys_pkgs    => $args{pkgs},
+        _verify_sig  => $args{verify_sig} // 1,
+        _version     => $args{version}
+        _uninstall_env  => $args{uninstall_env},
     }, $class;
 }
 
@@ -43,7 +48,8 @@ sub normalize_paths($self) {
 }
 
 
-for my $acc (qw( installpath locallib loglevel verify_sig version )) {
+for my $acc (qw( assume_yes installpath locallib loglevel prepare_env sys_pkgs
+                 verify_sig uninstall_env version )) {
     my $ref = qualify_to_ref $acc;
     *{$ref} = sub($self, $arg = undef) {
         $self->{"_$acc"} = $arg

@@ -137,6 +137,7 @@ sub compute($class, @args) {
 
     GetOptionsFromArray(
         \@args,
+        'yes|y!'             => sub { $config->assume_yes( $_[1] ) },
         'target=s'           => sub { $config->installpath( $_[1] ) },
         'local-lib=s'        => sub { $config->locallib( $_[1] ) },
         'log-level=s'        => sub { $config->loglevel( $_[1] ) },
@@ -183,7 +184,8 @@ sub install($class, @args) {
 
     GetOptionsFromArray(
         \@args,
-        'system-packages!'   => \$syspkgs,
+        'yes|y!'             => sub { $config->assume_yes( $_[1] ) },
+        'system-packages!'   => sub { $config->sys_pkgs( $_[1] ) },
         'target=s'           => sub { $config->installpath( $_[1] ) },
         'local-lib=s'        => sub { $config->locallib( $_[1] ) },
         'log-level=s'        => sub { $config->loglevel( $_[1] ) },
