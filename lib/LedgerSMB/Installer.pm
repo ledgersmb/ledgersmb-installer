@@ -114,7 +114,7 @@ sub _download($class, $installpath, $version) {
     };
 }
 
-sub _load_dist_support($class, $config) {
+sub _load_dist_support($class) {
     $log->info( "Detected O/S: $^O" );
     my $oss_class = "LedgerSMB::Installer::OS::$^O";
     try {
@@ -127,12 +127,13 @@ sub _load_dist_support($class, $config) {
         exit 2;
     }
 
-    my $oss = $oss_class->new( config => $config ); # operating system support instance
+    my $oss = $oss_class->new; # operating system support instance
     $log->debug( "Detecting distribution" );
-    return $oss->detect_dss(); # detect and return distribution support instance
+    return $oss->detect_dss; # detect and return distribution support instance
 }
 
 sub compute($class, @args) {
+    my $dss = $class->_load_dist_support;
     my $config = LedgerSMB::Installer::Configuration->new;
 
     GetOptionsFromArray(
@@ -179,6 +180,7 @@ sub download($class, @args) {
 }
 
 sub install($class, @args) {
+    my $dss = $class->_load_dist_support;
     my $config = LedgerSMB::Installer::Configuration->new;
 
     GetOptionsFromArray(
@@ -198,10 +200,13 @@ sub install($class, @args) {
 
     Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
-    my $dss = $class->_load_dist_support( $config );
     my $deps;
-    $deps = $dss->retrieve_precomputed_deps
-        if $config->sys_pkgs;
+    if ($config->sys_pkgs) {
+        $deps = $dss->retrieve_precomputed_deps(
+            $dss->name,
+            $dss->dependency_packages_identifier
+            );
+    }
     unless ($deps) {
         $log->warn( "No precomputed dependencies available for this distro/version" );
         $log->info( "Configuring environment for dependency computation" );

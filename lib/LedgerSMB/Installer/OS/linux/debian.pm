@@ -13,34 +13,14 @@ use Log::Any qw($log);
 
 sub new($class, %args) {
     return bless {
-        _config => $args{config},
         _distro => $args{distro},
         _have_deps => 0,
         _have_pkgs => ($EFFECTIVE_USER_ID == 0),
     }, $class;
 }
 
-sub retrieve_precomputed_deps($self) {
-    my $http = HTTP::Tiny->new;
-    my $arch = `dpkg --print-architecture`;
-    chomp($arch);
-    my $url  = $self->{_config}->dependency_url(
-        $self->{_distro}->{ID},
-        $self->dependency_packages_identifier
-        );
-
-    $log->info( "Retrieving dependency listing from $url" );
-    my $r = $http->get( $url );
-    if ($r->{success}) {
-        $self->{_have_deps} = 1;
-        return JSON::PP->new->utf8->decode( $r->{content} )->{packages};
-    }
-    elsif ($r->{status} == 599) {
-        die $log->fatal(
-            'Error trying to retrieve precomputed dependencies: ' . $r->{content}
-            );
-    }
-    return;
+sub name($self) {
+    return $self->{_distro}->{ID};
 }
 
 sub dependency_packages_identifier($self) {

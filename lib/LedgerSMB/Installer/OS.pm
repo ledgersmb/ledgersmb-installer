@@ -48,6 +48,10 @@ sub pg_config_extra_paths($self) {
     return ();
 }
 
+sub name($self) {
+    die 'Operating system and distribution support needs to override the "name" method';
+}
+
 sub validate_env($self, @args) {
 }
 

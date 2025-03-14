@@ -10,7 +10,6 @@ use Log::Any qw($log);
 
 sub new($class, %args) {
     return bless {
-        _config => $args{config},
     }, $class;
 }
 
@@ -78,7 +77,6 @@ sub detect_dss($self) {
 
 
     return $dss_class->new(
-        config => $self->{_config},
         distro => $self->{distro},
         );
 }

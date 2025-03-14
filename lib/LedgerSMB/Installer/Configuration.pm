@@ -7,6 +7,9 @@ use Cwd qw( getcwd );
 use File::Spec;
 use Symbol;
 
+
+use HTTP::Tiny;
+
 sub new( $class, %args ) {
     return bless {
         _assume_yes  => $args{assume_yes} // 0,
@@ -23,6 +26,26 @@ sub new( $class, %args ) {
 
 sub dependency_url($self, $distro, $id) {
     return "https://download.ledgersmb.org/f/dependencies/$distro/$id.json" ;
+}
+
+sub retrieve_precomputed_deps($self, $name, $id) {
+    my $http = HTTP::Tiny->new;
+    my $arch = `dpkg --print-architecture`;
+    chomp($arch);
+    my $url  = $self->dependency_url($name, $id);
+
+    $log->info( "Retrieving dependency listing from $url" );
+    my $r = $http->get( $url );
+    if ($r->{success}) {
+        $self->{_have_deps} = 1;
+        return JSON::PP->new->utf8->decode( $r->{content} )->{packages};
+    }
+    elsif ($r->{status} == 599) {
+        die $log->fatal(
+            'Error trying to retrieve precomputed dependencies: ' . $r->{content}
+            );
+    }
+    return;
 }
 
 sub normalize_paths($self) {
