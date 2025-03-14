@@ -81,11 +81,6 @@ sub detect_dss($self) {
         );
 }
 
-sub retrieve_precomputed_deps($self) {
-    $log->warn( q{No precomputed package dependencies available for generic 'linux' O/S} );
-    return ();
-}
-
 sub generate_startup($self, $cmds, $installpath, $locallib) {
     push $cmds->@*, '<startup>';
 }
