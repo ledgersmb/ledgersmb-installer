@@ -179,7 +179,6 @@ sub download($class, @args) {
 }
 
 sub install($class, @args) {
-    my $syspkgs = 1;
     my $config = LedgerSMB::Installer::Configuration->new;
 
     GetOptionsFromArray(
@@ -202,7 +201,7 @@ sub install($class, @args) {
     my $dss = $class->_load_dist_support( $config );
     my $deps;
     $deps = $dss->retrieve_precomputed_deps
-        if $syspkgs;
+        if $config->sys_pkgs;
     unless ($deps) {
         $log->warn( "No precomputed dependencies available for this distro/version" );
         $log->info( "Configuring environment for dependency computation" );
