@@ -12,6 +12,7 @@ use HTTP::Tiny;
 
 sub new( $class, %args ) {
     return bless {
+        # initialization options
         _assume_yes  => $args{assume_yes} // 0,
         _installpath => $args{installpath} // 'ledgersmb',
         _locallib    => $args{locallib} // 'local',
@@ -21,11 +22,20 @@ sub new( $class, %args ) {
         _verify_sig  => $args{verify_sig} // 1,
         _version     => $args{version}
         _uninstall_env  => $args{uninstall_env},
+
+        # internal state
+        _deps  => undef,
     }, $class;
 }
 
 sub dependency_url($self, $distro, $id) {
     return "https://download.ledgersmb.org/f/dependencies/$distro/$id.json" ;
+}
+
+sub have_deps($self) {
+    return (defined $self->{_deps}
+            and defined $self->{_deps}->{packages}
+            and $self->{_deps}->{packages}->@*);
 }
 
 sub retrieve_precomputed_deps($self, $name, $id) {
@@ -37,8 +47,8 @@ sub retrieve_precomputed_deps($self, $name, $id) {
     $log->info( "Retrieving dependency listing from $url" );
     my $r = $http->get( $url );
     if ($r->{success}) {
-        $self->{_have_deps} = 1;
-        return JSON::PP->new->utf8->decode( $r->{content} )->{packages};
+        $self->{_deps} = JSON::PP->new->utf8->decode( $r->{content} );
+        return $self->{_deps}->{packages};
     }
     elsif ($r->{status} == 599) {
         die $log->fatal(

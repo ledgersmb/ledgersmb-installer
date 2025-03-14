@@ -14,8 +14,6 @@ use Log::Any qw($log);
 sub new($class, %args) {
     return bless {
         _distro => $args{distro},
-        _have_deps => 0,
-        _have_pkgs => ($EFFECTIVE_USER_ID == 0),
     }, $class;
 }
 
@@ -52,6 +50,10 @@ sub pkg_from_module( $self, $mod ) {
     return '';
 }
 
+sub pkg_can_install($self) {
+    return ($EFFECTIVE_USER_ID == 0);
+}
+
 sub pkg_install($self, $pkgs) {
     $pkgs //= [];
     my $cmd;
@@ -67,13 +69,14 @@ sub pkg_install($self, $pkgs) {
 }
 
 sub validate_env($self, %args) {
+    my ($install_deps, $compute_deps) = @args{qw(install_deps compute_deps)};
     $self->SUPER::validate_env(
         %args,
         );
-    $self->have_cmd( 'dpkg', 1 ); # dpkg --print-architecture
-    $self->have_cmd( 'apt-get', 1 ); # required to install dependencies
-    $self->have_cmd( 'apt-file', not $self->{_have_deps} ); # required for computation of dependencies
-    $self->have_cmd( 'dh-make-perl', not $self->{_have_deps} );
+    $self->have_cmd( 'dpkg',         1 );                              # dpkg --print-architecture
+    $self->have_cmd( 'apt-get',      $install_deps or $compute_deps ); # required to install system packages
+    $self->have_cmd( 'apt-file',     $compute_deps );                  # required for computation of dependencies
+    $self->have_cmd( 'dh-make-perl', $compute_deps );                  # required for computation of dependencies
 }
 
 1;

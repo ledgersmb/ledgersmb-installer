@@ -157,10 +157,9 @@ sub compute($class, @args) {
     open( my $out, '>:encoding(UTF-8)', $args[0] )
         or die "Unable to open output file '$args[0]': $!";
 
-    my $dss = $class->_load_dist_support( $config );
     my @remarks = $dss->validate_env(
-        compute_deps => 1,
-        install_deps => 1,
+        compute_deps => not $config->have_deps,
+        install_deps => 0,
         );
 
     $class->_build_install_tree( $dss, $config->installpath, $config->version );
@@ -181,7 +180,9 @@ sub download($class, @args) {
 
 sub install($class, @args) {
     my $dss = $class->_load_dist_support;
-    my $config = LedgerSMB::Installer::Configuration->new;
+    my $config = LedgerSMB::Installer::Configuration->new(
+        pkgs => $dss->pkg_can_install,
+        );
 
     GetOptionsFromArray(
         \@args,
@@ -213,7 +214,7 @@ sub install($class, @args) {
     }
 
     my @remarks = $dss->validate_env(
-        compute_deps => defined($deps),
+        compute_deps => not defined($deps),
         install_deps => 1,
         );
 
