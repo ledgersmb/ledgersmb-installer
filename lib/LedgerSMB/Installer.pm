@@ -9,6 +9,7 @@ use File::Path qw( make_path remove_tree );
 use File::Spec;
 use Getopt::Long qw(GetOptionsFromArray);
 use HTTP::Tiny;
+use IO::Handle;
 use JSON::PP;
 
 use Log::Any qw($log);
@@ -249,6 +250,9 @@ sub install($class, @args) {
 }
 
 sub run($class, $cmd, @args) {
+    STDOUT->autoflush(1);
+    STDERR->autoflush(1);
+
     if ($cmd =~ m/^-/) { # option(s)
         unshift @args, $cmd;
         $cmd = 'install';
