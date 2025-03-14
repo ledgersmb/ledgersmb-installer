@@ -9,6 +9,7 @@ use Symbol;
 
 
 use HTTP::Tiny;
+use Log::Any qw($log);
 
 sub new( $class, %args ) {
     return bless {
@@ -20,7 +21,7 @@ sub new( $class, %args ) {
         _prep_env    => $args{prepare_env},
         _sys_pkgs    => $args{pkgs},
         _verify_sig  => $args{verify_sig} // 1,
-        _version     => $args{version}
+        _version     => $args{version},
         _uninstall_env  => $args{uninstall_env},
 
         # internal state

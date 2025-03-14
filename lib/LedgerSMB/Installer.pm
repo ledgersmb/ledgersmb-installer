@@ -203,7 +203,7 @@ sub install($class, @args) {
 
     my $deps;
     if ($config->sys_pkgs) {
-        $deps = $dss->retrieve_precomputed_deps(
+        $deps = $config->retrieve_precomputed_deps(
             $dss->name,
             $dss->dependency_packages_identifier
             );
