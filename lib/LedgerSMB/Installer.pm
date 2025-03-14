@@ -56,13 +56,20 @@ sub _compute_dep_pkgs($class, $dss, $installpath) {
 
     my @mods = sort { lc($a) cmp lc($b) } $effective->required_modules;
     my %pkgs;
+    my @unmapped;
     for my $mod (@mods) {
         my $pkg = $dss->pkg_from_module( $mod );
-        $pkgs{$pkg} = 1 if $pkg;
+
+        if ($pkg) {
+            $pkgs{$pkg} = 1;
+        }
+        else {
+            push @unmapped, $mod;
+        }
     }
     delete $pkgs{perl};
 
-    return sort keys %pkgs;
+    return ([ sort keys %pkgs ], \@unmapped);
 }
 
 sub _download($class, $installpath, $version) {
@@ -157,11 +164,14 @@ sub compute($class, @args) {
     $class->_build_install_tree( $dss, $config->installpath, $config->version );
 
     $log->info( "Computing O/S packages for declared dependencies" );
-    my $deps = [ $class->_compute_dep_pkgs( $dss, $config->installpath ) ];
+    my ($deps, $mods) = $class->_compute_dep_pkgs( $dss, $config->installpath );
 
     my $json = JSON::PP->new->utf8->canonical;
     say $out $json->encode( { identifier => $dss->dependency_packages_identifier,
-                              packages => $deps } );
+                              packages => $deps,
+                              modules => $mods,
+                              name => $dss->name,
+                              version => "1" } );
 }
 
 sub download($class, @args) {
