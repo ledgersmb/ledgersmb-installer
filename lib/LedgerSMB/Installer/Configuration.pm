@@ -40,6 +40,8 @@ sub have_deps($self) {
 }
 
 sub retrieve_precomputed_deps($self, $name, $id) {
+    return unless $name and $id;
+
     my $http = HTTP::Tiny->new;
     my $arch = `dpkg --print-architecture`;
     chomp($arch);
