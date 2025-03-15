@@ -18,6 +18,24 @@ use Module::CPANfile;
 
 use LedgerSMB::Installer::Configuration;
 
+sub _boot($class, $args, $options) {
+    my $dss = $class->_load_dist_support;
+    my $config = LedgerSMB::Installer::Configuration->new;
+
+    GetOptionsFromArray(
+        $args,
+        $config->option_callbacks( $options ),
+        );
+
+    # normalize $installpath (at least cpanm needs that)
+    # assume $locallib to be inside $installpath
+    $config->normalize_paths;
+
+    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
+
+    return ($dss, $config);
+}
+
 sub _build_install_tree($class, $dss, $installpath, $version) {
     my $archive = "ledgersmb-$version.tar.gz";
 
@@ -123,23 +141,10 @@ sub _load_dist_support($class) {
 }
 
 sub compute($class, @args) {
-    my $dss = $class->_load_dist_support;
-    my $config = LedgerSMB::Installer::Configuration->new;
-
-    GetOptionsFromArray(
+    my ($dss, $config) = $class->_boot(
         \@args,
-        'yes|y!'             => sub { $config->assume_yes( $_[1] ) },
-        'target=s'           => sub { $config->installpath( $_[1] ) },
-        'local-lib=s'        => sub { $config->locallib( $_[1] ) },
-        'log-level=s'        => sub { $config->loglevel( $_[1] ) },
-        'version=s'          => sub { $config->version( $_[1] ) },
+        [ 'yes|y!', 'target=s', 'local-lib=s', 'log-level=s', 'version=s' ]
         );
-
-    # normalize $installpath (at least cpanm needs that)
-    # assume $locallib to be inside $installpath
-    $config->normalize_paths;
-
-    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
     if (@args != 1) {
         die "Incorrect number of arguments";
@@ -192,28 +197,11 @@ sub download($class, @args) {
 }
 
 sub install($class, @args) {
-    my $dss = $class->_load_dist_support;
-    my $config = LedgerSMB::Installer::Configuration->new(
-        sys_pkgs => $dss->pkg_can_install,
-        );
-
-    GetOptionsFromArray(
+    my ($dss, $config) = $class->_boot(
         \@args,
-        'yes|y!'             => sub { $config->assume_yes( $_[1] ) },
-        'system-packages!'   => sub { $config->sys_pkgs( $_[1] ) },
-        'prepare-env!'       => sub { $config->prepare_env( $_[1] ) },
-        'target=s'           => sub { $config->installpath( $_[1] ) },
-        'local-lib=s'        => sub { $config->locallib( $_[1] ) },
-        'log-level=s'        => sub { $config->loglevel( $_[1] ) },
-        'verify-sig!'        => sub { $config->verify_sig( $_[1] ) },
-        'version=s'          => sub { $config->version( $_[1] ) },
+        [ 'yes|y!', 'system-packages!', 'prepare-env!', 'target=s',
+          'local-lib=s', 'log-level=s', 'verify-sig!', 'version=s' ]
         );
-
-    # normalize $installpath (at least cpanm needs that)
-    # assume $locallib to be inside $installpath
-    $config->normalize_paths;
-
-    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
     my $deps;
     do {

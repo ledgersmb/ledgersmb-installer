@@ -127,6 +127,21 @@ sub effective_uninstall_env( $self ) {
     return $self->prepare_env;
 }
 
+sub option_callbacks($self, $options) {
+    my %opts = (
+        'yes|y!'             => sub { $self->assume_yes( $_[1] ) },
+        'system-packages!'   => sub { $self->sys_pkgs( $_[1] ) },
+        'prepare-env!'       => sub { $self->prepare_env( $_[1] ) },
+        'target=s'           => sub { $self->installpath( $_[1] ) },
+        'local-lib=s'        => sub { $self->locallib( $_[1] ) },
+        'log-level=s'        => sub { $self->loglevel( $_[1] ) },
+        'verify-sig!'        => sub { $self->verify_sig( $_[1] ) },
+        'version=s'          => sub { $self->version( $_[1] ) },
+        );
+
+    return %opts{$options->@*};
+}
+
 for my $acc (qw( assume_yes installpath locallib loglevel
                  compute_deps prepare_env sys_pkgs
                  verify_sig uninstall_env version )) {
