@@ -26,6 +26,7 @@ sub new( $class, %args ) {
 
         # internal state
         _deps  => undef,
+        _cleanup_pkgs => [],
     }, $class;
 }
 
@@ -61,6 +62,14 @@ sub retrieve_precomputed_deps($self, $name, $id) {
     return;
 }
 
+sub mark_pkgs_for_cleanup($self, $pkgs) {
+    push $self->{_cleanup_pkgs}->@*, $pkgs->@*;
+}
+
+sub pkgs_for_cleanup($self) {
+    return $self->{_cleanup_pkgs}->@*;
+}
+
 sub normalize_paths($self) {
     my $installpath = $self->installpath;
     if (not File::Spec->file_name_is_absolute( $installpath )) {
@@ -83,6 +92,23 @@ sub normalize_paths($self) {
     }
 }
 
+sub effective_prepare_env( $self ) {
+    if (defined $self->prepare_env) {
+        return $self->prepare_env;
+    }
+
+    return 1 if $self->assume_yes;
+
+    # ask and set 'prepare_env' (so uninstall_env can use it) ...
+}
+
+sub effective_uninstall_env( $self ) {
+    if (defined $self->uninstall_env) {
+        return $self->uninstall_env;
+    }
+
+    return $self->prepare_env;
+}
 
 for my $acc (qw( assume_yes installpath locallib loglevel prepare_env sys_pkgs
                  verify_sig uninstall_env version )) {
