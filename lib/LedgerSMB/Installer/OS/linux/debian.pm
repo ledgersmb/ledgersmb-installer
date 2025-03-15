@@ -68,6 +68,15 @@ sub pkg_install($self, $pkgs) {
         or croak $log->fatal( "Unable to install required packages through apt-get: $!" );
 }
 
+sub pkg_uninstall($self, $pkgs) {
+    $pkgs //= [];
+    my $apt_get = $self->have_cmd( 'apt-get' );
+    my $cmd = "DEBIAN_FRONTEND=noninteractive $apt_get autoremove --purge -q -y " . join(' ', $pkgs->@*);
+    $log->debug( "system(): " . $cmd );
+    system($cmd) == 0
+        or croak $log->fatal( "Unable to uninstall packages through apt-get: $!" );
+}
+
 sub validate_env($self, %args) {
     my ($install_deps, $compute_deps) = @args{qw(install_deps compute_deps)};
     $self->SUPER::validate_env(

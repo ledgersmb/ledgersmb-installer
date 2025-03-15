@@ -65,6 +65,10 @@ sub pkg_install($self) {
     die 'Operating system and distribution support needs to override the "pkg_install" method';
 }
 
+sub pkg_uninstall($self) {
+    die 'Operating system and distribution support needs to override the "pkg_uninstall" method';
+}
+
 sub name($self) {
     die 'Operating system and distribution support needs to override the "name" method';
 }
