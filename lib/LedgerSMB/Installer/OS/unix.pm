@@ -25,7 +25,7 @@ sub pg_config_extra_paths($self) {
     return @paths;
 }
 
-sub validate_env($self, @args) {
+sub validate_env($self, $config, @args) {
     $self->SUPER::validate_env( @args );
     $self->have_cmd('cpanm', 0);
     $self->have_cmd('wget',  0);
@@ -37,7 +37,7 @@ sub validate_env($self, @args) {
     $self->have_cmd('gzip');     # fatal, used by 'tar'
     $self->have_cmd('tar');      # fatal
     $self->have_cmd('make');     # fatal
-    $self->have_cmd('gpg');      # fatal
+    $self->have_cmd('gpg',   $config->verify_sig);      # fatal
 }
 
 sub cpanm_install($self, $installpath, $locallib) {

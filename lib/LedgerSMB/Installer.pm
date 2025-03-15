@@ -158,22 +158,45 @@ sub compute($class, @args) {
     open( my $out, '>:encoding(UTF-8)', $args[0] )
         or die "Unable to open output file '$args[0]': $!";
 
-    my @remarks = $dss->validate_env(
-        compute_deps => not $config->have_deps,
-        install_deps => 0,
-        );
+    if ($config->effective_prepare_env) {
+        $dss->prepare_env(
+            $config,
+            compute_deps => 1,
+            );
+    }
 
-    $class->_build_install_tree( $dss, $config->installpath, $config->version );
+    my $exception;
+    try {
+        my @remarks = $dss->validate_env(
+            $config,
+            compute_deps => 1,
+            );
 
-    $log->info( "Computing O/S packages for declared dependencies" );
-    my ($deps, $mods) = $class->_compute_dep_pkgs( $dss, $config->installpath );
+        $class->_build_install_tree( $dss, $config->installpath, $config->version );
 
-    my $json = JSON::PP->new->utf8->canonical;
-    say $out $json->encode( { identifier => $dss->dependency_packages_identifier,
-                              packages => $deps,
-                              modules => $mods,
-                              name => $dss->name,
-                              version => "1" } );
+        $log->info( "Computing O/S packages for declared dependencies" );
+        my ($deps, $mods) = $class->_compute_dep_pkgs( $dss, $config->installpath );
+
+        my $json = JSON::PP->new->utf8->canonical;
+        say $out $json->encode( { identifier => $dss->dependency_packages_identifier,
+                                  packages => $deps,
+                                  modules => $mods,
+                                  name => $dss->name,
+                                  version => "1" } );
+    }
+    catch ($e) {
+        $exception = $e;
+    }
+    finally {
+        if ($config->effective_uninstall_env) {
+            $log->warning( "Cleaning up Perl module installation dependencies" );
+            $dss->cleanup_env($config);
+        }
+    }
+
+    die $exception if $exception;
+
+    return 0;
 }
 
 sub download($class, @args) {
@@ -182,13 +205,14 @@ sub download($class, @args) {
 sub install($class, @args) {
     my $dss = $class->_load_dist_support;
     my $config = LedgerSMB::Installer::Configuration->new(
-        pkgs => $dss->pkg_can_install,
+        sys_pkgs => $dss->pkg_can_install,
         );
 
     GetOptionsFromArray(
         \@args,
         'yes|y!'             => sub { $config->assume_yes( $_[1] ) },
         'system-packages!'   => sub { $config->sys_pkgs( $_[1] ) },
+        'prepare-env!'       => sub { $config->prepare_env( $_[1] ) },
         'target=s'           => sub { $config->installpath( $_[1] ) },
         'local-lib=s'        => sub { $config->locallib( $_[1] ) },
         'log-level=s'        => sub { $config->loglevel( $_[1] ) },
@@ -203,48 +227,74 @@ sub install($class, @args) {
     Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
 
     my $deps;
-    if ($config->sys_pkgs) {
-        $deps = $config->retrieve_precomputed_deps(
-            $dss->name,
-            $dss->dependency_packages_identifier
+    do {
+        my $name = $dss->name;
+        my $dep_pkg_id = $dss->dependency_packages_identifier;
+        if ($config->sys_pkgs) {
+            $deps = $config->retrieve_precomputed_deps($name, $dep_pkg_id);
+        }
+        unless ($deps) {
+            $log->warn( "No precomputed dependencies available for $name/$dep_pkg_id" );
+            $log->info( "Configuring environment for dependency computation" );
+        }
+    };
+
+    if ($config->effective_prepare_env) {
+        $dss->prepare_env(
+            $config,
+            compute_deps => $config->effective_compute_deps,
+            install_deps => $config->sys_pkgs,
+            install_mods => 1
             );
     }
-    unless ($deps) {
-        $log->warn( "No precomputed dependencies available for this distro/version" );
-        $log->info( "Configuring environment for dependency computation" );
+
+    my $exception;
+    try {
+        my @remarks = $dss->validate_env(
+            $config,
+            compute_deps => $config->effective_compute_deps,
+            install_deps => 1,
+            );
+
+        # Generate script
+        # 1. build install path:
+        #    a. create installation directory
+        #    b. download tarball
+        #    c. unpack tarball
+        #    d. delete tarball
+        # in case of missing precomputed deps:
+        #   5. compute dependencies (distro packages)
+        # 6. install (pre)computed dependencies (distro packages)
+        # 7. install CPAN dependencies (using cpanm & local::lib)
+        # 8. generate startup script (set local::lib environment)
+
+        $class->_build_install_tree( $dss, $config->installpath, $config->version );
+
+        if ($config->effective_compute_deps) {
+            $log->info( "Computing O/S packages for declared dependencies" );
+
+            # discard unmapped modules
+            ($deps) = $class->_compute_dep_pkgs( $dss, $config->installpath );
+        }
+
+        if ($deps and $config->sys_pkgs) {
+            $log->info( "Installing O/S packages: " . join(' ', $deps->@*) );
+            $dss->pkg_install( $deps )
+        }
+        $dss->cpanm_install( $config->installpath, $config->locallib );
+        $dss->generate_startup( $config );
+    }
+    catch ($e) {
+        $exception = $e;
+    }
+    finally {
+        if ($config->effective_uninstall_env) {
+            $log->warning( "Cleaning up Perl module installation dependencies" );
+            $dss->cleanup_env($config);
+        }
     }
 
-    my @remarks = $dss->validate_env(
-        compute_deps => not defined($deps),
-        install_deps => 1,
-        );
-
-    # Generate script
-    # 1. build install path:
-    #    a. create installation directory
-    #    b. download tarball
-    #    c. unpack tarball
-    #    d. delete tarball
-    # in case of missing precomputed deps:
-    #   5. compute dependencies (distro packages)
-    # 6. install (pre)computed dependencies (distro packages)
-    # 7. install CPAN dependencies (using cpanm & local::lib)
-    # 8. generate startup script (set local::lib environment)
-
-    $class->_build_install_tree( $dss, $config->installpath, $config->version );
-
-    if (not $deps
-        and $dss->{_have_pkgs}) {
-        $log->info( "Computing O/S packages for declared dependencies" );
-        $deps = [ $class->_compute_dep_pkgs( $dss, $config->installpath ) ];
-    }
-
-    if ($deps and $dss->{_have_pkgs}) {
-        $log->info( "Installing O/S packages: " . join(' ', $deps->@*) );
-        $dss->pkg_install( $deps )
-    }
-    $dss->cpanm_install( $config->installpath, $config->locallib );
-    $dss->generate_startup( $config->installpath, $config->locallib );
+    die $exception if $exception;
 
     return 0;
 }

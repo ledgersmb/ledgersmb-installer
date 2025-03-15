@@ -19,7 +19,7 @@ sub new( $class, %args ) {
         _locallib    => $args{locallib} // 'local',
         _loglevel    => $args{loglevel} // 'info',
         _prep_env    => $args{prepare_env},
-        _sys_pkgs    => $args{pkgs},
+        _sys_pkgs    => $args{sys_pkgs},
         _verify_sig  => $args{verify_sig} // 1,
         _version     => $args{version},
         _uninstall_env  => $args{uninstall_env},
@@ -50,16 +50,18 @@ sub retrieve_precomputed_deps($self, $name, $id) {
 
     $log->info( "Retrieving dependency listing from $url" );
     my $r = $http->get( $url );
+    my $pkgs;
     if ($r->{success}) {
         $self->{_deps} = JSON::PP->new->utf8->decode( $r->{content} );
-        return $self->{_deps}->{packages};
+        $pkgs = $self->{_deps}->{packages};
     }
     elsif ($r->{status} == 599) {
         die $log->fatal(
             'Error trying to retrieve precomputed dependencies: ' . $r->{content}
             );
     }
-    return;
+    $self->{_deps_retrieved} = 1;
+    return $pkgs;
 }
 
 sub mark_pkgs_for_cleanup($self, $pkgs) {
@@ -92,6 +94,21 @@ sub normalize_paths($self) {
     }
 }
 
+sub effective_compute_deps( $self ) {
+    return '' unless $self->sys_pkgs;
+    return '' if $self->{_deps};
+
+    if (defined $self->compute_deps) {
+        return $self->compute_deps;
+    }
+
+    $log->warning( "Result of 'effective_compute_deps()' not reliable: "
+                   . "no attempt to retrieve dependencies" )
+        unless $self->{_deps_retrieved};
+
+    return 1;
+}
+
 sub effective_prepare_env( $self ) {
     if (defined $self->prepare_env) {
         return $self->prepare_env;
@@ -110,7 +127,8 @@ sub effective_uninstall_env( $self ) {
     return $self->prepare_env;
 }
 
-for my $acc (qw( assume_yes installpath locallib loglevel prepare_env sys_pkgs
+for my $acc (qw( assume_yes installpath locallib loglevel
+                 compute_deps prepare_env sys_pkgs
                  verify_sig uninstall_env version )) {
     my $ref = qualify_to_ref $acc;
     *{$ref} = sub($self, $arg = undef) {

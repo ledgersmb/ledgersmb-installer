@@ -78,15 +78,41 @@ sub pkg_uninstall($self, $pkgs) {
         or croak $log->fatal( "Unable to uninstall packages through apt-get: $!" );
 }
 
-sub validate_env($self, %args) {
+sub cleanup_env($self, $config) {
+    $self->pkg_uninstall( [ $config->pkgs_for_cleanup ] );
+}
+
+sub prepare_env($self, $config, %args) {
+    my @pkgs = ();
+
+    $log->debug( "Preparing environment for 'debian'" );
+    if ($args{compute_deps}) {
+        $log->trace( "Preparing for dependency computation" );
+        push @pkgs, 'apt-file' unless $self->have_cmd( 'apt-file', 0 );
+        push @pkgs, 'dh-make-perl' unless $self->have_cmd( 'dh-make-perl', 0 );
+    }
+    if ($args{install_mods}) {
+        $log->trace( "Preparing for module installation" );
+        push @pkgs, 'gcc' unless $self->have_cmd( 'gcc', 0 );
+        push @pkgs, 'make' unless $self->have_cmd( 'make', 0 );
+    }
+
+    if (@pkgs) {
+        $config->mark_pkgs_for_cleanup( \@pkgs );
+        $self->pkg_install( \@pkgs );
+    }
+}
+
+sub validate_env($self, $config, %args) {
     my ($install_deps, $compute_deps) = @args{qw(install_deps compute_deps)};
     $self->SUPER::validate_env(
+        $config,
         %args,
         );
     $self->have_cmd( 'dpkg',         1 );                              # dpkg --print-architecture
-    $self->have_cmd( 'apt-get',      $install_deps or $compute_deps ); # required to install system packages
-    $self->have_cmd( 'apt-file',     $compute_deps );                  # required for computation of dependencies
-    $self->have_cmd( 'dh-make-perl', $compute_deps );                  # required for computation of dependencies
+    $self->have_cmd( 'apt-get',      $config->sys_pkgs );
+    $self->have_cmd( 'apt-file',     $config->effective_compute_deps );
+    $self->have_cmd( 'dh-make-perl', $config->effective_compute_deps );
 }
 
 1;

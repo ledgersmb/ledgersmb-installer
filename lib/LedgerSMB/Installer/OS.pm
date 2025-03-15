@@ -73,7 +73,13 @@ sub name($self) {
     die 'Operating system and distribution support needs to override the "name" method';
 }
 
-sub validate_env($self, @args) {
+sub cleanup_env($self, $config) {
+}
+
+sub prepare_env($self, $config) {
+}
+
+sub validate_env($self, $config, @args) {
 }
 
 1;

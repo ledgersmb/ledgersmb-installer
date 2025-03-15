@@ -81,8 +81,8 @@ sub detect_dss($self) {
         );
 }
 
-sub generate_startup($self, $cmds, $installpath, $locallib) {
-    push $cmds->@*, '<startup>';
+sub generate_startup($self, $config) {
+    $log->warning( "Generation of startup scripts not implemented" );
 }
 
 1;
