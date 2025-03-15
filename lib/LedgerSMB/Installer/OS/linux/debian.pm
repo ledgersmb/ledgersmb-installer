@@ -27,27 +27,32 @@ sub dependency_packages_identifier($self) {
     return "$self->{_distro}->{ID}-$self->{_distro}->{VERSION_CODENAME}-$arch";
 }
 
-sub pkg_from_module( $self, $mod ) {
+sub pkgs_from_modules($self, $mods) {
     if (not state $init = 0) {
         $log->info( "Updating 'apt-file' packages index" );
         system($self->{cmd}->{'apt-file'}, 'update') == 0
             or croak $log->fatal( "Unable to update apt-file's index: $!" );
         $init = 1;
     }
-    $log->debug( "Looking up package for $mod" );
-    my $pkg = `$self->{cmd}->{'dh-make-perl'} --no-verbose locate "$mod" 2>/dev/null`;
-    if ($?) {
-        return '';
+
+    my $args = join(' ', $mods->@*);
+    open(my $fh, '-|',
+         "$self->{cmd}->{'dh-make-perl'} --no-verbose locate $args 2>/dev/null")
+        or return ({}, []);
+
+    my (%pkgs, @unmapped);
+    while (my $pkg_line = <$fh>) {
+        if ($pkg_line =~ m/^(\S+) is not found in any/) {
+            push @unmapped, $1;
+            $log->trace( "Module '$1' not found" );
+        }
+        elsif ($pkg_line =~ m/^(\S+) is in (\S+) package/) {
+            $pkgs{$2} //= [];
+            push $pkgs{$2}->@*, $1;
+            $log->trace( "Module '$1' found in package $2" );
+        }
     }
-    elsif ($pkg =~ m/is not found in any/) {
-        return '';
-    }
-    elsif ($pkg =~ m/is in (\S+) package/) {
-        my $rv = $1;
-        $log->trace( "Module '$mod' found in package $1" );
-        return $rv;
-    }
-    return '';
+    return (\%pkgs, \@unmapped);
 }
 
 sub pkg_can_install($self) {

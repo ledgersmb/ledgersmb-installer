@@ -78,7 +78,7 @@ sub cpanm_install($self, $installpath, $locallib) {
         or croak $log->fatal( "Failure running cpanm - exit code: $?" );
 }
 
-sub pkg_from_module($self, $mod) {
+sub pkgs_from_modules($self, $mods) {
     croak $log->fatal( 'Generic Unix support does not include package installers' );
 }
 

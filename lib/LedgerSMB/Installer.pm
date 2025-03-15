@@ -56,21 +56,10 @@ sub _compute_dep_pkgs($class, $dss, $installpath) {
     }
 
     my @mods = sort { lc($a) cmp lc($b) } $effective->required_modules;
-    my %pkgs;
-    my @unmapped;
-    for my $mod (@mods) {
-        my $pkg = $dss->pkg_from_module( $mod );
+    my ($pkgs, $unmapped) = $dss->pkgs_from_modules( \@mods );
+    delete $pkgs->{perl};
 
-        if ($pkg) {
-            $pkgs{$pkg} = 1;
-        }
-        else {
-            push @unmapped, $mod;
-        }
-    }
-    delete $pkgs{perl};
-
-    return ([ sort keys %pkgs ], \@unmapped);
+    return ([ sort keys $pkgs->%* ], $unmapped);
 }
 
 sub _download($class, $installpath, $version) {

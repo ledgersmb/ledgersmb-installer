@@ -53,8 +53,8 @@ sub pg_config_extra_paths($self) {
     return ();
 }
 
-sub pkg_from_module($self, $mod) {
-    die 'Operating system and distribution support needs to override the "pkg_from_module" method';
+sub pkgn_from_modules($self, $mod) {
+    die 'Operating system and distribution support needs to override the "pkgs_from_modules" method';
 }
 
 sub pkg_can_install($self) {
