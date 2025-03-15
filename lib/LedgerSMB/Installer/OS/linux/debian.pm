@@ -56,13 +56,14 @@ sub pkg_can_install($self) {
 
 sub pkg_install($self, $pkgs) {
     $pkgs //= [];
+    my $apt_get = $self->have_cmd( 'apt-get' );
     my $cmd;
-    $cmd = "DEBIAN_FRONTEND=noninteractive $self->{cmd}->{'apt-get'} update -q -y";
+    $cmd = "DEBIAN_FRONTEND=noninteractive $apt_get update -q -y";
     $log->debug( "system(): " . $cmd );
     system($cmd) == 0
         or croak $log->fatal( "Unable to update 'apt-get' package index: $!" );
 
-    $cmd = "DEBIAN_FRONTEND=noninteractive $self->{cmd}->{'apt-get'} install -q -y " . join(' ', $pkgs->@*);
+    $cmd = "DEBIAN_FRONTEND=noninteractive $apt_get install -q -y " . join(' ', $pkgs->@*);
     $log->debug( "system(): " . $cmd );
     system($cmd) == 0
         or croak $log->fatal( "Unable to install required packages through apt-get: $!" );
