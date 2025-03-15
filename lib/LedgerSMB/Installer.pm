@@ -249,6 +249,11 @@ sub install($class, @args) {
     return 0;
 }
 
+sub print_id( $class, @args) {
+    my $dss = $class->_load_dist_support;
+    say $dss->dependency_packages_identifier;
+}
+
 sub run($class, $cmd, @args) {
     STDOUT->autoflush(1);
     STDERR->autoflush(1);
@@ -257,14 +262,17 @@ sub run($class, $cmd, @args) {
         unshift @args, $cmd;
         $cmd = 'install';
     }
-    if ($cmd eq 'compute') {
+    elsif ($cmd eq 'compute') {
         return $class->compute( @args );
     }
     elsif ($cmd eq 'download') {
         return $class->download( @args );
     }
-    if ($cmd eq 'install') {
+    elsif ($cmd eq 'install') {
         return $class->install( @args );
+    }
+    elsif ($cmd eq 'system-id') {
+        return $class->print_id( @args );
     }
     else {
         die "Unknown command 'cmd'\n";

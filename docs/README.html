@@ -61,6 +61,8 @@
       Platforms without package manager support will install <em>all</em>
       dependencies from CPAN.</p>
     <p></p>
+
+
     <h2>Installer download</h2>
     <p>Download the installer and make it executable using these commands:</p>
     <code class="block">
@@ -69,12 +71,16 @@
     </code>
     <p>Or, download the content of https://get.ledgersmb.org/ using your
       favorite browser.</p>
+
+
     <h2>Quickstart</h2>
     <p>To install LedgerSMB 1.12.1 with all the default options, run:</p>
     <code class="block">
       $ ./ledgersmb-installer install 1.12.1
     </code>
     <p>You'll want to change <em>1.12.1</em> with the latest version</p>
+
+
     <h2>Commands</h2>
     <dl>
       <dt><code>ledgersmb-installer install [options] &lt;version&gt;</code></dt>
@@ -84,11 +90,21 @@
       <dt><code>ledgersmb-installer compute [options] &lt;version&gt;</code></dt>
       <dd>Computes the mapping of Perl module dependencies to their
         distribution package equivalents.</dd>
+
 <!--      <dt>download</dt>
       <dd>Downloads the indicated LedgerSMB tarball and signature, verifying
         the signature after download.</dd>-->
+
+      <dt><code>ledgersmb-installer system-id [options]</code></dt>
+      <dd>Prints the identifier of the system. This identifier is used to name
+        the file containing the mapping of the Perl modules to the system packages.</dd>
+
     </dl>
+
+
     <h2>Options</h2>
+
+
     <h3>General</h3>
     <p>Options applicable to all commands</p>
     <dl>
@@ -124,8 +140,12 @@
       <dd>Automatically answer &quot;yes&quot; to installer questions, allowing
         non-interactive use. (Shorthand: <code>-y</code>)</dd>
     </dl>
+
+
     <h3 id="compute-options">compute</h3>
     <p>There are no options specific to this command.</p>
+
+
     <h3 id="install-options">install</h3>
     <dl>
       <dt class="todo"><code>--[no-]compute-packages</code></dt>
@@ -146,5 +166,11 @@
 
       <dt>
     </dl>
+
+
+    <h3 id="system-id-options">system-id</h3>
+    <p>There are no options specific to this command.</p>
+
+
   </body>
 </html>
