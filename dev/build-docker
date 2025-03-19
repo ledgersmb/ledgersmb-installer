@@ -1,0 +1,7 @@
+#!/bin/bash -x
+
+dev/build
+cp packed docker/ledgersmb-installer
+chmod +x docker/ledgersmb-installer
+docker build --progress=plain -t ledgersmb-installer ./docker/
+
