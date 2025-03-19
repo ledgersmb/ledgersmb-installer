@@ -49,6 +49,9 @@ sub have_cmd($self, $cmd, $fatal = 1, $extra_path = []) {
     return $executable;
 }
 
+sub have_pkgs($self, $pkgs) {
+}
+
 sub pg_config_extra_paths($self) {
     return ();
 }
@@ -73,10 +76,10 @@ sub name($self) {
     die 'Operating system and distribution support needs to override the "name" method';
 }
 
-sub cleanup_env($self, $config) {
+sub cleanup_env($self, $config, %args) {
 }
 
-sub prepare_env($self, $config) {
+sub prepare_env($self, $config, %args) {
 }
 
 sub validate_env($self, $config, @args) {

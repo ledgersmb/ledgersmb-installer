@@ -83,7 +83,14 @@ sub pkg_uninstall($self, $pkgs) {
         or croak $log->fatal( "Unable to uninstall packages through apt-get: $!" );
 }
 
-sub cleanup_env($self, $config) {
+sub cleanup_env($self, $config, %args) {
+    if ($args{compute_deps}) {
+        # this is rather ugly; better to have prepare_env to schedule the right packages...
+        $self->pkg_uninstall( [ grep { m/^(?:apt-file|dh-make-perl)$/ }
+                                $config->pkgs_for_cleanup ] );
+        return;
+    }
+
     $self->pkg_uninstall( [ $config->pkgs_for_cleanup ] );
 }
 

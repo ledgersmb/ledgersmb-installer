@@ -68,9 +68,11 @@ sub cpanm_install($self, $installpath, $locallib) {
     my @cmd = (
         $self->{cmd}->{cpanm},
         '--notest',
+        '--metacpan',
         '--with-all-features',
+        '--with-recommends',
         '--local-lib', $locallib,
-        '--installdeps', "$installpath"
+        '--installdeps', $installpath
         );
 
     $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );

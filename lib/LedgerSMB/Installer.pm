@@ -5,12 +5,15 @@ use experimental qw(signatures try);
 
 use Carp qw( croak );
 use CPAN::Meta::Requirements;
+use English;
 use File::Path qw( make_path remove_tree );
 use File::Spec;
 use Getopt::Long qw(GetOptionsFromArray);
 use HTTP::Tiny;
 use IO::Handle;
 use JSON::PP;
+use List::Util qw(uniq);
+use Module::CoreList;
 
 use Log::Any qw($log);
 use Log::Any::Adapter;
@@ -20,7 +23,9 @@ use LedgerSMB::Installer::Configuration;
 
 sub _boot($class, $args, $options) {
     my $dss = $class->_load_dist_support;
-    my $config = LedgerSMB::Installer::Configuration->new;
+    my $config = LedgerSMB::Installer::Configuration->new(
+        sys_pkgs => ($EFFECTIVE_USER_ID == 0)
+        );
 
     GetOptionsFromArray(
         $args,
@@ -61,7 +66,7 @@ sub _build_install_tree($class, $dss, $installpath, $version) {
         } ( $archive, "$archive.asc" ) );
 }
 
-sub _compute_dep_pkgs($class, $dss, $installpath) {
+sub _compute_immediate_deps($class, $dss, $installpath) {
     my @types     = qw( requires recommends );
     my @phases    = qw( runtime );
     my $decl      = Module::CPANfile->load( File::Spec->catfile( $installpath, 'cpanfile' ) );
@@ -74,9 +79,86 @@ sub _compute_dep_pkgs($class, $dss, $installpath) {
     }
 
     my @mods = sort { lc($a) cmp lc($b) } $effective->required_modules;
-    my ($pkgs, $unmapped) = $dss->pkgs_from_modules( \@mods );
-    delete $pkgs->{perl};
 
+    $log->debug( "Direct dependency count: " . scalar(@mods) );
+    return @mods;
+}
+
+sub _compute_all_deps($class, $dss, $installpath) {
+    my @deps = $class->_compute_immediate_deps( $dss, $installpath );
+
+    my $http = HTTP::Tiny->new( agent => 'LedgerSMB-Installer/0.1' );
+    my $json = JSON::PP->new;
+
+
+    my @last_deps = @deps;
+    my %dists;
+    my $iteration = 1;
+    do {
+        my $query = {
+            query => { match_all => {} },
+            _source => [ qw( release distribution status provides ), 'dependency.*' ],
+            filter => {
+                and => [
+                    { term => { status => 'latest' } },
+                    { terms => { provides => [ @last_deps ] } }
+                    ]
+            }
+        };
+
+        my $body = $json->encode( $query );
+        my $r = $http->request( 'POST', 'https://fastapi.metacpan.org/v1/release/_search?size=1000',
+                                { headers => { 'Content-Type' => 'application/json' },
+                                  content => $body });
+        my $hits = $json->decode($r->{content})->{hits};
+
+        for my $release ($hits->{hits}->@*) {
+            $dists{$release->{_source}->{distribution}} = 1;
+        }
+
+        my %provide;
+        for my $release ($hits->{hits}->@*) {
+            for my $provided ($release->{_source}->{provides}->@*) {
+                $provide{$provided} = 1;
+            }
+        }
+
+        my %rdeps;
+        for my $release ($hits->{hits}->@*) {
+            for my $dep ($release->{_source}->{dependency}->@*) {
+                next unless $dep->{relationship} eq 'requires';
+                next unless $dep->{phase} eq 'runtime';
+                $rdeps{$dep->{module}} = 1;
+            }
+        }
+
+        delete $rdeps{perl};
+        @last_deps = sort grep {
+            my $m = $_;
+            my $c = Module::CoreList->is_core($m);
+
+            not ($provide{$m} or $c);
+        } keys %rdeps;
+        push @deps, @last_deps;
+
+        $log->trace( "Dependency resolution iteration $iteration - "
+                     . "remaining to resolve: " . scalar(@last_deps) );
+        $iteration++;
+    } while (@last_deps);
+
+    @deps = uniq @deps;
+    $log->debug( "Dependency tree size: " . scalar(@deps) );
+    return uniq @deps;
+}
+
+sub _compute_dep_pkgs($class, $dss, $installpath) {
+    my @mods = $class->_compute_all_deps( $dss, $installpath );
+    my ($pkgs, $unmapped) = $dss->pkgs_from_modules( \@mods );
+
+    my $c = scalar(@mods);
+    my $p = scalar(keys $pkgs->%*);
+    my $u = scalar($unmapped->@*);
+    $log->debug( "Resolved $c modules to $p packages; $u unmapped" );
     return ([ sort keys $pkgs->%* ], $unmapped);
 }
 
@@ -252,6 +334,8 @@ sub install($class, @args) {
 
             # discard unmapped modules
             ($deps) = $class->_compute_dep_pkgs( $dss, $config->installpath );
+
+            $dss->cleanup_env( $config, compute_deps => 1 );
         }
 
         if ($deps and $config->sys_pkgs) {
