@@ -278,6 +278,21 @@ sub compute($class, @args) {
 sub download($class, @args) {
 }
 
+sub help($class, @args) {
+    say <<~EOT;
+    $0 version CLONED
+
+      Commands:
+        compute
+        download
+        install
+        help
+        system-id
+    EOT
+
+    return 0;
+}
+
 sub install($class, @args) {
     my ($dss, $config) = $class->_boot(
         \@args,
@@ -379,6 +394,9 @@ sub run($class, $cmd, @args) {
     elsif ($cmd eq 'download') {
         return $class->download( @args );
     }
+    elsif ($cmd eq 'help') {
+        return $class->help( @args );
+    }
     elsif ($cmd eq 'install') {
         return $class->install( @args );
     }
@@ -386,7 +404,8 @@ sub run($class, $cmd, @args) {
         return $class->print_id( @args );
     }
     else {
-        die "Unknown command 'cmd'\n";
+        $class->help();
+        exit 1;
     }
 }
 
