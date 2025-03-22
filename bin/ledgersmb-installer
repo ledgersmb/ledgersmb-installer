@@ -3,13 +3,12 @@
 
 BEGIN {
    local $SIG{__DIE__} = sub { warn @_; exit 1; };
-   if ($] < 5.034) {
-     die "Perl version too low ($^V); v5.34 required\n";
+   if ($] < 5.020) {
+     die "Perl version too low ($^V); v5.20 required\n";
    }
 }
 
-use v5.34; # because of try/catch
-BEGIN { unshift @INC, 'lib'; } # almost, but not quite, "use lib 'lib';"
+use v5.20; # because of signatures
 
 
 my $failed_validate_msg = <<'EOF';

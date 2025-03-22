@@ -1,7 +1,7 @@
 package LedgerSMB::Installer::OS;
 
-use v5.34;
-use experimental qw(try signatures);
+use v5.20;
+use experimental qw(signatures);
 
 use Cwd qw( getcwd );
 use File::Basename qw( fileparse );

@@ -1,7 +1,7 @@
 package LedgerSMB::Installer::OS::linux::debian;
 
-use v5.34;
-use experimental qw( try signatures );
+use v5.20;
+use experimental qw(signatures);
 use parent qw( LedgerSMB::Installer::OS::linux );
 
 use Carp qw( croak );

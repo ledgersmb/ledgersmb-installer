@@ -1,7 +1,7 @@
 package LedgerSMB::Installer::PkgMan::APT;
 
-use v5.36;
-use experimental qw( try signatures );
+use v5.20;
+use experimental qw(signatures);
 
 use Log::Any qw($log);
 
