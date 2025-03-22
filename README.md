@@ -82,6 +82,8 @@ flowchart TD
     pre_G --> |Yes| pre_I(Install perlbrew)
 
     pre_H --> pre_K(Install packaged modules)
+    pre_K --> pre_K2{Have unpackaged modules}
+    pre_K2 --> |No| pre_Z
     pre_I --> pre_M
 
     pre_F2 --> |Yes| pre_F6(Install libxml2)
@@ -96,7 +98,7 @@ flowchart TD
     pre_F7 --> |No| pre_J
     pre_F8 --> pre_L
 
-    pre_K --> pre_L{Can compile modules}
+    pre_K2 --> |Yes| pre_L{Can compile modules}
     pre_L --> |Yes| pre_M(Install CPAN modules)
     pre_L --> |No| pre_J
     pre_M --> pre_Z
