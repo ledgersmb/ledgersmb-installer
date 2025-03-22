@@ -32,11 +32,10 @@ sub validate_perl_env {
     my (@missing);
     for my $mod (qw( experimental lib parent
                      File::Path File::Spec File::Temp
-                     Getopt::Long HTTP::Tiny )) {
-        my $file = "$mod.pm" =~ s/::/\//gr;
-        eval { require $file; 1 }
-        or do {
-            if ($@ =~ /^Can't locate \Q$file\E in \@INC/) {
+                     Getopt::Long HTTP::Tiny IO::Socket::SSL)) {
+        my $have_mod = eval "require $mod";
+        unless ($have_mod) {
+            if ($@ =~ /^Can't locate \Q$mod\E in \@INC/) {
                 push @missing, $mod;
             }
             else {
