@@ -53,7 +53,7 @@ necessary O/S packages.
 flowchart TD
     pre_A@{ shape: start }
     pre_A --> pre_B{Known platform}
-    pre_B --> |Yes| pre_C{Have precomputed deps}
+    pre_B --> |Yes| pre_C{"Have precomputed deps<br>(implies suitable system perl)"}
     pre_B --> |No| pre_D(Compute module deps)
     pre_C --> |Yes| pre_C1{Can install pkgs}
     pre_C --> |No| pre_D
