@@ -52,14 +52,24 @@ necessary O/S packages.
 ```mermaid
 flowchart TD
     pre_A@{ shape: start }
-    pre_A --> pre_B{Known platform}
-    pre_B --> |Yes| pre_C{"Have precomputed deps<br>(implies suitable system perl)"}
+    --> pre_A1(Check suitable running Perl)
+    --> pre_A2(Check have perlbrew)
+    --> pre_A3(Check running system Perl)
+    --> pre_A5(Check have compiler)
+    --> pre_A7(Check have C library headers)
+    --> pre_A6(Check have make)
+    --> pre_A4(Check have pg_config and Pg headers)
+    --> pre_A8(Check have xml2-config and libxml2 headers)
+    --> pre_B{Known platform}
+    pre_B --> |Yes| pre_B1{Running system Perl}
     pre_B --> |No| pre_D(Compute all/full module deps)
+    pre_B1 --> |Yes| pre_C{"Have precomputed deps<br>(implies suitable system perl)"}
+    pre_B1 --> |No| pre_D
     pre_C --> |Yes| pre_C1{Can install pkgs}
     pre_C --> |No| pre_D
     pre_C1 --> |Yes| pre_K
     pre_C1 --> |No| pre_D
-    pre_D --> pre_E{Have suitable system perl}
+    pre_D --> pre_E{Running suitable system perl}
 
     pre_E --> |Yes| pre_F{Can install pkgs && <br>Have 'pkg compute' prereqs}
     pre_E --> |No| pre_E2{Have libxml2 prereq}
@@ -73,13 +83,14 @@ flowchart TD
     pre_E6 --> |Yes| pre_G
     pre_E7 --> |No| pre_J
     pre_E7 --> |Yes| pre_E8(Install libpq)
-    pre_E8 --> pre_G
+    pre_E8 --> pre_G{Running suitable Perl}
 
-    pre_G{Can install perlbrew}
     pre_F --> |Yes| pre_H(Map pkg deps)
     pre_F --> |No| pre_F2{Have libxml2 prereq}
-    pre_G --> |No| pre_J(**bail out**)
-    pre_G --> |Yes| pre_I(Install perlbrew)
+    pre_G --> |No| pre_G1{Can install perlbrew}    
+    pre_G --> |Yes| pre_M
+    pre_G1 --> |No| pre_J(**bail out**)
+    pre_G1 --> |Yes| pre_I(Install perlbrew)
 
     pre_H --> pre_K(Install packaged modules)
     pre_K --> pre_K2{Have unpackaged modules}
