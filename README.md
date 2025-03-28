@@ -65,7 +65,7 @@ flowchart TD
     pre_B1 --> |Yes| pre_C{"Have precomputed deps<br>(implies suitable system perl)"}
     pre_B1 --> |No| pre_D
     pre_C --> |Yes| pre_C1{Can install pkgs}
-    pre_C --> |No| pre_D
+    pre_C --> |No| pre_D(Compute all/full module deps)
     pre_C1 --> |Yes: check module builder| pre_K
     pre_C1 --> |No| pre_D
     pre_D --> pre_E{Running suitable system perl}
