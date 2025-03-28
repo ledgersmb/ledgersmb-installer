@@ -60,9 +60,8 @@ flowchart TD
     --> pre_A6(Check have make)
     --> pre_A4(Check have pg_config and Pg headers)
     --> pre_A8(Check have xml2-config and libxml2 headers)
-    --> pre_B{Known platform}
-    pre_B --> |Yes| pre_B1{Running system Perl}
-    pre_B --> |No| pre_D(Compute all/full module deps)
+    --> pre_B(Load platform support)
+    pre_B --> pre_B1{Running system Perl}
     pre_B1 --> |Yes| pre_C{"Have precomputed deps<br>(implies suitable system perl)"}
     pre_B1 --> |No| pre_D
     pre_C --> |Yes| pre_C1{Can install pkgs}
