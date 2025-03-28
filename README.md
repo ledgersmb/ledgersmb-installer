@@ -68,12 +68,17 @@ flowchart TD
     pre_C --> |No| pre_D(Compute all/full module deps)
     pre_C1 --> |Yes: check module builder| pre_K
     pre_C1 --> |No| pre_D
-    pre_D --> pre_E{Running suitable system perl}
+    pre_D --> pre_E{Running suitable perl}
 
-    pre_E --> |Yes: check module builder| pre_F{Can install pkgs && <br>Have 'pkg compute' prereqs}
-    pre_E --> |No| pre_E1{Running suitable perl}
-    pre_E1 --> |Yes: check module builder| pre_E1a{Have DBD::Pg}
-    pre_E1 --> |No| pre_E1b
+    pre_E --> |Yes| pre_alpha{Running suitable **system** perl}
+    pre_E --> |No| pre_beta{Have suitable perl}
+    pre_beta --> |Yes| pre_gamma(Continue with suitable perl)
+    pre_beta --> |No| pre_E1b
+    pre_gamma --> pre_E1a
+
+    pre_alpha --> |Yes: check module builder| pre_F{Can install pkgs && <br>Have 'pkg compute' prereqs}
+    pre_alpha --> |No| pre_E1a{Have DBD::Pg}
+
     pre_E1a --> |Yes| pre_E2
     pre_E1a --> |No| pre_E1b{Have libpq prereq}
     pre_E1b --> |No| pre_E1c{Can install pkgs}
