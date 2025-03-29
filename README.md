@@ -62,10 +62,10 @@ flowchart TD
     --> pre_B(Load platform support)
     pre_B --> pre_B1{Running system Perl}
     pre_B1 --> |Yes| pre_C{"Have precomputed deps<br>(implies suitable system perl)"}
-    pre_B1 --> |No| pre_D(Download & Install tarball)
+    pre_B1 --> |No| pre_D(Grab 'cpanfile' from GitHub)
     pre_C --> |Yes| pre_C1{Can install pkgs}
     pre_C --> |No| pre_D
-    pre_C1 --> |Yes: check module builder| pre_K(Download & Install tarball)
+    pre_C1 --> |Yes: check module builder| pre_K
     pre_C1 --> |No| pre_D
     pre_D --> pre_E{Running suitable perl}
 
@@ -101,11 +101,11 @@ flowchart TD
     pre_F --> |Yes| pre_H(Map pkg deps)
     pre_F --> |No| pre_E1a
 
-    pre_H --> pre_K1
-    pre_K --> pre_K1(Install packaged modules)
-    pre_K1 --> pre_N
-    pre_M --> pre_N(Install CPAN modules)
-    --> pre_O(Cleanup: Remove build modules)
+    pre_H --> pre_K(Install packaged modules)
+    pre_K --> pre_K1(Download & Install tarball)
+    pre_K1 --> pre_N(Install CPAN modules)
+    pre_M --> pre_K1
+    pre_N --> pre_O(Cleanup: Remove build modules)
     --> pre_Z
     pre_Z@{ shape: stop }
 ```
