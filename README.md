@@ -67,16 +67,15 @@ flowchart TD
     pre_C --> |No| pre_D
     pre_C1 --> |Yes: check module builder| pre_K(Download & Install tarball)
     pre_C1 --> |No| pre_D
-    pre_D --> pre_D1(Compute all/full module deps)
-    pre_D1 --> pre_E{Running suitable perl}
+    pre_D --> pre_E{Running suitable perl}
 
-    pre_E --> |Yes| pre_alpha{Running suitable **system** perl}
+    pre_E --> |Yes: check module builder| pre_alpha{Running suitable **system** perl}
     pre_E --> |No| pre_beta{Have suitable perl}
-    pre_beta --> |Yes| pre_gamma(Continue with suitable perl)
-    pre_beta --> |No| pre_E1b
-    pre_gamma --> pre_E1a
+    pre_beta --> |No: assert other prereqs| pre_E1b
+    pre_beta --> |Yes| pre_gamma(Self-invoke with suitable perl)
+    --> pre_Z2@{ shape: stop }
 
-    pre_alpha --> |Yes: check module builder| pre_F{Can install pkgs && <br>Have 'pkg compute' prereqs}
+    pre_alpha --> |Yes| pre_F{Can install pkgs && <br>Have 'pkg compute' prereqs}
     pre_alpha --> |No| pre_E1a{Have DBD::Pg}
 
     pre_E1a --> |Yes| pre_delta
@@ -84,16 +83,15 @@ flowchart TD
     pre_E1b --> |Yes| pre_E1d
     pre_E1b --> |No| pre_E1c{Can install pkgs}
     pre_E1c --> |Yes| pre_E1d(Install libpq)
-    pre_E1c --> |No| pre_J(**bail**)
+    pre_E1c --> |No| pre_J(**bail**) --> pre_O
     pre_E1d --> pre_delta{Have LaTeX::Driver}
     pre_delta --> |Yes| pre_E2{Running suitable Perl}
     pre_delta --> pre_epsilon{Have or install 'latex' binary}
     pre_epsilon --> |Yes| pre_E2
     pre_epsilon --> |No| pre_J
-    pre_E2 --> |No| pre_E2a(Install perlbrew)
     pre_E2 --> |Yes| pre_E2b{Have libxml2}
-    pre_E2a --> pre_E2b
-    pre_E2b --> |Yes| pre_M
+    pre_E2 --> |No| pre_E2a(Install perlbrew) --> pre_E2c(Self-invoke with suitable perl) --> pre_Z3@{ shape: stop }
+    pre_E2b --> |Yes| pre_M(Install latex)
     pre_E2b --> |No| pre_E3{Can install pkgs}
     pre_E3 --> |Yes| pre_E4(Install libxml2)
     pre_E3 --> |No| pre_E5(Install Alien::LibXML)
@@ -105,8 +103,9 @@ flowchart TD
 
     pre_H --> pre_K1
     pre_K --> pre_K1(Install packaged modules)
-    --> pre_M(Install latex)
-    --> pre_N(Install CPAN modules)
+    pre_K1 --> pre_N
+    pre_M --> pre_N(Install CPAN modules)
+    --> pre_O(Cleanup: Remove build modules)
     --> pre_Z
     pre_Z@{ shape: stop }
 ```
