@@ -9,6 +9,10 @@ use File::Spec;
 
 use Log::Any qw($log);
 
+sub am_system_perl($self) {
+    return !!0;
+}
+
 sub have_cmd($self, $cmd, $fatal = 1, $extra_path = []) {
     if ($self->{cmd} and $self->{cmd}->{$cmd}) {
         $log->debug( "Found cached command $self->{cmd}->{$cmd}" );
@@ -77,12 +81,6 @@ sub name($self) {
 }
 
 sub cleanup_env($self, $config, %args) {
-}
-
-sub prepare_env($self, $config, %args) {
-}
-
-sub validate_env($self, $config, @args) {
 }
 
 1;

@@ -84,45 +84,38 @@ sub pkg_uninstall($self, $pkgs) {
 }
 
 sub cleanup_env($self, $config, %args) {
-    if ($args{compute_deps}) {
-        # this is rather ugly; better to have prepare_env to schedule the right packages...
-        $self->pkg_uninstall( [ grep { m/^(?:apt-file|dh-make-perl)$/ }
-                                $config->pkgs_for_cleanup ] );
-        return;
-    }
-
     $self->pkg_uninstall( [ $config->pkgs_for_cleanup ] );
 }
 
-sub prepare_env($self, $config, %args) {
-    my @pkgs = ();
-
-    $log->debug( "Preparing environment for 'debian'" );
-    if ($args{compute_deps}) {
-        $log->trace( "Preparing for dependency computation" );
-        push @pkgs, 'apt-file' unless $self->have_cmd( 'apt-file', 0 );
-        push @pkgs, 'dh-make-perl' unless $self->have_cmd( 'dh-make-perl', 0 );
-    }
-    if ($args{install_mods}) {
-        $log->trace( "Preparing for module installation" );
-        push @pkgs, 'gcc' unless $self->have_cmd( 'gcc', 0 );
-        push @pkgs, 'make' unless $self->have_cmd( 'make', 0 );
-    }
-
-    if (@pkgs) {
-        $config->mark_pkgs_for_cleanup( \@pkgs );
-        $self->pkg_install( \@pkgs );
+sub prepare_builder_environment($self, $config) {
+    my $have_build_essential = `dpkg-query -W build-essential`;
+    unless ($? == 0) {
+        $config->mark_pkgs_for_cleanup( [ 'build-essential' ] );
+        $self->pkg_install( [ 'build-essential' ] );
     }
 }
 
-sub validate_env($self, $config, %args) {
-    my ($install_deps, $compute_deps) = @args{qw(install_deps compute_deps)};
-    $self->SUPER::validate_env(
-        $config,
-        %args,
-        );
-    $self->have_cmd( 'dpkg',         1 );                              # dpkg --print-architecture
-    $self->have_cmd( 'apt-get',      $config->sys_pkgs );
+sub prepare_installer_environment($self, $config) {
+    my $have_make = `dpkg-query -W make`;
+    unless ($? == 0) {
+        $config->mark_pkgs_for_cleanup( [ 'make' ] );
+        $self->pkg_install( [ 'make' ] );
+    }
+    $self->SUPER::prepare_installer_environment( $config );
+}
+
+sub prepare_pkg_resolver_environment($self, $config) {
+    my @new_pkgs;
+    my $have_dh_make_perl = `dpkg-query -W dh-make-perl`;
+    unless ($? == 0) {
+        push @new_pkgs, 'dh-make-perl';
+    }
+    my $have_apt_file = `dpkg-query -W apt-file`;
+    unless ($? == 0) {
+        push @new_pkgs, 'apt-file';
+    }
+    $config->mark_pkgs_for_cleanup( \@new_pkgs );
+    $self->pkg_install( \@new_pkgs );
     $self->have_cmd( 'apt-file',     $config->effective_compute_deps );
     $self->have_cmd( 'dh-make-perl', $config->effective_compute_deps );
 }

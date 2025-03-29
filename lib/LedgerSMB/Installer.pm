@@ -8,18 +8,24 @@ use CPAN::Meta::Requirements;
 use English;
 use File::Path qw( make_path remove_tree );
 use File::Spec;
+use File::Temp qw( tempfile );
 use Getopt::Long qw(GetOptionsFromArray);
 use HTTP::Tiny;
 use IO::Handle;
 use JSON::PP;
 use List::Util qw(uniq);
 use Module::CoreList;
+use version;
 
 use Log::Any qw($log);
 use Log::Any::Adapter;
 use Module::CPANfile;
 
 use LedgerSMB::Installer::Configuration;
+
+my $http = HTTP::Tiny->new( agent => 'LedgerSMB-Installer/0.1' );
+my $json = JSON::PP->new;
+
 
 sub _boot($class, $args, $options) {
     my $dss = $class->_load_dist_support;
@@ -66,10 +72,36 @@ sub _build_install_tree($class, $dss, $installpath, $version) {
         } ( $archive, "$archive.asc" ) );
 }
 
-sub _compute_immediate_deps($class, $dss, $installpath) {
+sub _get_cpanfile($class, $config) {
+    return $config->cpanfile if $config->cpanfile;
+
+    my $response = $http->get(
+        sprintf("https://raw.githubusercontent.com/ledgersmb/LedgerSMB/refs/tags/%s/cpanfile",
+               $config->version)
+        );
+    unless ($response->{success}) {
+        die $log->fatal("Unable to get 'cpanfile' from GitHub: " + $response->{content});
+    }
+
+    my ($fh, $fn) = tempfile();
+    print $fh $response->{content};
+    $fh->flush;
+
+    my $decl = Module::CPANfile->load( $fn );
+    $config->cpanfile( $decl );
+
+    return $decl;
+}
+
+sub _get_immediate_prereqs($class, $config) {
+    my $decl = $class->_get_cpanfile( $config );
+    return $decl->prereqs;
+}
+
+sub _compute_immediate_deps($class, $config) {
     my @types     = qw( requires recommends );
     my @phases    = qw( runtime );
-    my $decl      = Module::CPANfile->load( File::Spec->catfile( $installpath, 'cpanfile' ) );
+    my $decl      = $class->_get_cpanfile( $config );
     my $prereqs   = $decl->prereqs_with( map { $_->identifier } $decl->features ); # all features
     my $effective = CPAN::Meta::Requirements->new;
     for my $phase (@phases) {
@@ -84,12 +116,8 @@ sub _compute_immediate_deps($class, $dss, $installpath) {
     return @mods;
 }
 
-sub _compute_all_deps($class, $dss, $installpath) {
-    my @deps = $class->_compute_immediate_deps( $dss, $installpath );
-
-    my $http = HTTP::Tiny->new( agent => 'LedgerSMB-Installer/0.1' );
-    my $json = JSON::PP->new;
-
+sub _compute_all_deps($class, $config) {
+    my @deps = $class->_compute_immediate_deps( $config );
 
     my @last_deps = @deps;
     my %dists;
@@ -151,8 +179,8 @@ sub _compute_all_deps($class, $dss, $installpath) {
     return uniq @deps;
 }
 
-sub _compute_dep_pkgs($class, $dss, $installpath) {
-    my @mods = $class->_compute_all_deps( $dss, $installpath );
+sub _compute_dep_pkgs($class, $dss, $config ) {
+    my @mods = $class->_compute_all_deps( $config );
     my ($pkgs, $unmapped) = $dss->pkgs_from_modules( \@mods );
 
     my $c = scalar(@mods);
@@ -251,7 +279,7 @@ sub compute($class, @args) {
             $class->_build_install_tree( $dss, $config->installpath, $config->version );
 
             $log->info( "Computing O/S packages for declared dependencies" );
-            my ($deps, $mods) = $class->_compute_dep_pkgs( $dss, $config->installpath );
+            my ($deps, $mods) = $class->_compute_dep_pkgs( $dss, $config );
 
             my $json = JSON::PP->new->utf8->canonical;
             say $out $json->encode( { identifier => $dss->dependency_packages_identifier,
@@ -293,86 +321,101 @@ sub help($class, @args) {
 }
 
 sub install($class, @args) {
+    my $rv = 1;
     my ($dss, $config) = $class->_boot(
         \@args,
         [ 'yes|y!', 'system-packages!', 'prepare-env!', 'target=s',
           'local-lib=s', 'log-level=s', 'verify-sig!', 'version=s' ]
         );
 
-    my $deps;
-    do {
+    my $pkg_deps;
+    if ($dss->am_system_perl) {
         my $name = $dss->name;
         my $dep_pkg_id = $dss->dependency_packages_identifier;
         if ($config->sys_pkgs) {
-            $deps = $config->retrieve_precomputed_deps($name, $dep_pkg_id);
+            $pkg_deps = $config->retrieve_precomputed_deps($name, $dep_pkg_id);
         }
-        unless ($deps) {
+        if ($pkg_deps) {
+            if ($dss->pkg_can_install()) {
+                $dss->prepare_builder_environment( $config );
+                goto INSTALL_SYS_PKGS;
+            }
+            else {
+                $log->warn( "Unable to install system packages; will resort to installation of CPAN modules" );
+                $pkg_deps = undef;
+            }
+        }
+        else {
             $log->warn( "No precomputed dependencies available for $name/$dep_pkg_id" );
             $log->info( "Configuring environment for dependency computation" );
         }
-    };
-
-    if ($config->effective_prepare_env) {
-        $dss->prepare_env(
-            $config,
-            compute_deps => $config->effective_compute_deps,
-            install_deps => $config->sys_pkgs,
-            install_mods => 1
-            );
     }
 
-    my $exception;
-    do {
-        local $@ = undef;
-        my $failed = not eval {
-            my @remarks = $dss->validate_env(
-                $config,
-                compute_deps => $config->effective_compute_deps,
-                install_deps => 1,
-                );
+    my $prereqs = $class->_get_immediate_prereqs( $config );
+    my $requirements = $prereqs->merged_requirements();
 
-            # Generate script
-            # 1. build install path:
-            #    a. create installation directory
-            #    b. download tarball
-            #    c. unpack tarball
-            #    d. delete tarball
-            # in case of missing precomputed deps:
-            #   5. compute dependencies (distro packages)
-            # 6. install (pre)computed dependencies (distro packages)
-            # 7. install CPAN dependencies (using cpanm & local::lib)
-            # 8. generate startup script (set local::lib environment)
 
-            $class->_build_install_tree( $dss, $config->installpath, $config->version );
+    unless  ($requirements->accepts_module( 'perl', $])) {
+        # BAIL: No suitable Perl here...
+        #
+        # well, we might want to see if Perlbrew is installed with an acceptable version?
+        #
+        # and if not, we could install Perlbrew here...
+        die $log->fatal( "Not running a Perl version compliant with LedgerSMB " . $config->version );
+    }
 
-            if ($config->effective_compute_deps) {
-                $log->info( "Computing O/S packages for declared dependencies" );
 
-                # discard unmapped modules
-                ($deps) = $class->_compute_dep_pkgs( $dss, $config->installpath );
+    ########################################################################################
+    #
+    #  Need to clean up on failure after this point! We're about to change system state!
+    #
+    ########################################################################################
+    $dss->prepare_builder_environment( $config );
 
-                $dss->cleanup_env( $config, compute_deps => 1 );
-            }
+    if ($dss->am_system_perl and $dss->pkg_can_install) {  # and $dss->deps_can_map
+        goto COMPUTE_SYS_PKGS;
+    }
 
-            if ($deps and $config->sys_pkgs) {
-                $log->info( "Installing O/S packages: " . join(' ', $deps->@*) );
-                $dss->pkg_install( $deps )
-            }
-            $dss->cpanm_install( $config->installpath, $config->locallib );
-            $dss->generate_startup( $config );
+    $log->info( "Checking for availability of DBD::Pg" );
+    unless (require DBD::Pg) {
+        # don't have DBD::Pg
 
-            return 1;
-        };
-        $exception = $@ if $failed;
+        # find pg_config
+        # find libpq5
+        # build against libpq5
+        ...;
+    }
 
-        if ($config->effective_uninstall_env) {
-            $log->warning( "Cleaning up Perl module installation dependencies" );
-            $dss->cleanup_env($config);
-        }
-    };
-    die $exception if defined $exception;
+    $log->info( "Checking for availability of LaTeX::Driver" );
+    unless (require LaTeX::Driver) {
+        # don't have LaTeX::Driver
 
-    return 0;
+        # testing early, because this module only installs
+        # when LaTeX is installed...
+
+        ...;
+    }
+
+    goto PREPARE_TREE;
+
+  COMPUTE_SYS_PKGS:
+    $dss->prepare_pkg_resolver_environment( $config );
+    ($pkg_deps) = $class->_compute_dep_pkgs( $dss, $config );
+
+  INSTALL_SYS_PKGS:
+    $log->info( "Installing O/S packages: " . join(' ', $pkg_deps->@*) );
+    $dss->pkg_install( $pkg_deps );
+
+  PREPARE_TREE:
+    $dss->prepare_installer_environment( $config );
+    $class->_build_install_tree( $dss, $config->installpath, $config->version );
+    $dss->cpanm_install( $config->installpath, $config->locallib );
+    $rv = 0;
+
+  CLEANUP:
+    $log->warning( "Cleaning up Perl module installation dependencies" );
+    $dss->cleanup_env($config);
+    return $rv;
 }
 
 sub print_id( $class, @args) {

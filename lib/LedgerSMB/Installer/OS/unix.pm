@@ -5,7 +5,7 @@ use experimental qw(signatures);
 use parent qw(LedgerSMB::Installer::OS);
 
 use Carp qw( croak );
-use File::Path qw( make_path );
+use File::Path qw( make_path remove_tree );
 use File::Spec;
 use HTTP::Tiny;
 use Log::Any qw($log);
@@ -25,24 +25,20 @@ sub pg_config_extra_paths($self) {
     return @paths;
 }
 
-sub validate_env($self, $config, @args) {
-    $self->SUPER::validate_env( @args );
+sub am_system_perl($self) {
+    return ($^X eq '/usr/bin/perl');
+}
+
+sub prepare_installer_environment($self, $config) {
     $self->have_cmd('cpanm', 0);
-    $self->have_cmd('wget',  0);
-    $self->have_cmd('curl',  0);
-    $self->have_cmd('cc',    0); # might be used during dist-installation
-    $self->have_cmd('gcc',   0); # might be used during dist-installation
-    $self->have_cmd('cpp',   0); # might be used during dist-installation
-    $self->have_cmd('c++',   0); # might be used during dist-installation
     $self->have_cmd('gzip');     # fatal, used by 'tar'
     $self->have_cmd('tar');      # fatal
     $self->have_cmd('make');     # fatal
-    $self->have_cmd('gpg',   $config->verify_sig);      # fatal
 }
 
 sub cpanm_install($self, $installpath, $locallib) {
     unless ($self->{cmd}->{cpanm}) {
-        make_path( File::Spec->catfile( $installpath, 'tmp' ) );
+        make_path( File::Spec->catdir( $installpath, 'tmp' ) );
 
         my $http = HTTP::Tiny->new;
         my $r    = $http->get( 'https://cpanmin.us/' );
@@ -62,22 +58,26 @@ sub cpanm_install($self, $installpath, $locallib) {
             chmod( 0755, $cpanm ) or warn $log->warning( "Failure making tmp/cpanm executable" );
             $self->{cmd}->{cpanm} = $cpanm;
         }
-
     }
 
     my @cmd = (
         $self->{cmd}->{cpanm},
         '--notest',
         '--metacpan',
-        '--with-all-features',
+        '--with-feature=starman',
+        '--with-feature=latex-pdf-ps',
+        '--with-feature=openoffice',
         '--with-recommends',
         '--local-lib', $locallib,
         '--installdeps', $installpath
         );
 
     $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
+
+    local $ENV{PERL_CPANM_HOME} = File::Spec->catdir( $installpath, 'tmp' );
     system(@cmd) == 0
         or croak $log->fatal( "Failure running cpanm - exit code: $?" );
+    remove_tree( File::Spec->catdir( $installpath, 'tmp' ) );
 }
 
 sub pkgs_from_modules($self, $mods) {
@@ -95,13 +95,6 @@ sub untar($self, $tar, $target, %options) {
     $log->debug( 'system(): ' . join(' ', map { "'$_'" } @cmd ) );
     system(@cmd) == 0
         or croak $log->fatal( "Failure executing tar: $!" );
-}
-
-sub verify_gpg($self, $cmds, $file) {
-    push $cmds->@*, (
-        "<import-gpg-key>",
-        "$self->{cmd}->{gpg} --verify $file.asc $file"
-        );
 }
 
 1;

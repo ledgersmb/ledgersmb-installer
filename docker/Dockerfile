@@ -11,7 +11,7 @@ RUN echo -n "APT::Install-Recommends \"0\";\nAPT::Install-Suggests \"0\";\n" >> 
 # apt-file dh-make-perl
 
 COPY ledgersmb-installer /usr/bin/ledgersmb-installer
-RUN ledgersmb-installer install --prepare-env --no-verify-sig --log-level=trace --version=$VERSION && \
+RUN cd /srv ; ledgersmb-installer install --prepare-env --no-verify-sig --log-level=trace --version=$VERSION && \
     DEBIAN_FRONTEND="noninteractive" apt-get clean -q && \
     rm -rf ~/.cpanm/ /var/lib/apt/lists/* /usr/share/man/*
 
