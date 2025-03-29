@@ -52,7 +52,6 @@ necessary O/S packages.
 ```mermaid
 flowchart TD
     pre_A@{ shape: start }
-    --> pre_A1(Check suitable running Perl)
     --> pre_A2(Check have perlbrew)
     --> pre_A3(Check running system Perl)
     --> pre_A5(Check have compiler)
@@ -63,12 +62,13 @@ flowchart TD
     --> pre_B(Load platform support)
     pre_B --> pre_B1{Running system Perl}
     pre_B1 --> |Yes| pre_C{"Have precomputed deps<br>(implies suitable system perl)"}
-    pre_B1 --> |No| pre_D
+    pre_B1 --> |No| pre_D(Download & Install tarball)
     pre_C --> |Yes| pre_C1{Can install pkgs}
-    pre_C --> |No| pre_D(Compute all/full module deps)
-    pre_C1 --> |Yes: check module builder| pre_K
+    pre_C --> |No| pre_D
+    pre_C1 --> |Yes: check module builder| pre_K(Download & Install tarball)
     pre_C1 --> |No| pre_D
-    pre_D --> pre_E{Running suitable perl}
+    pre_D --> pre_D1(Compute all/full module deps)
+    pre_D1 --> pre_E{Running suitable perl}
 
     pre_E --> |Yes| pre_alpha{Running suitable **system** perl}
     pre_E --> |No| pre_beta{Have suitable perl}
@@ -79,13 +79,17 @@ flowchart TD
     pre_alpha --> |Yes: check module builder| pre_F{Can install pkgs && <br>Have 'pkg compute' prereqs}
     pre_alpha --> |No| pre_E1a{Have DBD::Pg}
 
-    pre_E1a --> |Yes| pre_E2
+    pre_E1a --> |Yes| pre_delta
     pre_E1a --> |No| pre_E1b{Have libpq prereq}
-    pre_E1b --> |No| pre_E1c{Can install pkgs}
     pre_E1b --> |Yes| pre_E1d
-    pre_E1c --> |No| pre_J(**bail**)
+    pre_E1b --> |No| pre_E1c{Can install pkgs}
     pre_E1c --> |Yes| pre_E1d(Install libpq)
-    pre_E1d --> pre_E2{Running suitable Perl}
+    pre_E1c --> |No| pre_J(**bail**)
+    pre_E1d --> pre_delta{Have LaTeX::Driver}
+    pre_delta --> |Yes| pre_E2{Running suitable Perl}
+    pre_delta --> pre_epsilon{Have or install 'latex' binary}
+    pre_epsilon --> |Yes| pre_E2
+    pre_epsilon --> |No| pre_J
     pre_E2 --> |No| pre_E2a(Install perlbrew)
     pre_E2 --> |Yes| pre_E2b{Have libxml2}
     pre_E2a --> pre_E2b
@@ -99,10 +103,10 @@ flowchart TD
     pre_F --> |Yes| pre_H(Map pkg deps)
     pre_F --> |No| pre_E1a
 
-    pre_H --> pre_K(Install packaged modules)
-    pre_K --> pre_K2{Have unpackaged modules}
-    pre_K2 --> |No| pre_Z
-    pre_K2 --> |Yes| pre_M(Install CPAN modules)
-    pre_M --> pre_Z
+    pre_H --> pre_K1
+    pre_K --> pre_K1(Install packaged modules)
+    --> pre_M(Install latex)
+    --> pre_N(Install CPAN modules)
+    --> pre_Z
     pre_Z@{ shape: stop }
 ```
