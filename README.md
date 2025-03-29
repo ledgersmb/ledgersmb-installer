@@ -83,7 +83,7 @@ flowchart TD
     pre_E1b --> |Yes| pre_E1d
     pre_E1b --> |No| pre_E1c{Can install pkgs}
     pre_E1c --> |Yes| pre_E1d(Install libpq)
-    pre_E1c --> |No| pre_J(**bail**) --> pre_O
+    pre_E1c --> |No| pre_J("**bail**<br><span style="font-size:small">(Unchanged system state;<br>no cleanup)</span>") --> pre_Z4@{ shape: stop }
     pre_E1d --> pre_delta{Have LaTeX::Driver}
     pre_delta --> |Yes| pre_E2{Running suitable Perl}
     pre_delta --> pre_epsilon{Have or install 'latex' binary}
