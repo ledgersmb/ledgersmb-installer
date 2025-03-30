@@ -24,7 +24,7 @@ use Module::CPANfile;
 use LedgerSMB::Installer::Configuration;
 
 my $http = HTTP::Tiny->new( agent => 'LedgerSMB-Installer/0.1' );
-my $json = JSON::PP->new;
+my $json = JSON::PP->new->canonical;
 
 
 sub _boot($class, $args, $options) {
@@ -253,44 +253,49 @@ sub compute($class, @args) {
         \@args,
         [ 'yes|y!', 'target=s', 'local-lib=s', 'log-level=s', 'version=s' ]
         );
+    $config->compute_deps( 1 );
 
     if (@args != 1) {
         die "Incorrect number of arguments";
     }
-    open( my $out, '>:encoding(UTF-8)', $args[0] )
-        or die "Unable to open output file '$args[0]': $!";
+    my $deps_outfile = $args[0];
+    open( my $out, '>:raw', $deps_outfile )
+        or die "Unable to open output file '$deps_outfile': $!";
 
-    if ($config->effective_prepare_env) {
-        $dss->prepare_env(
-            $config,
-            compute_deps => 1,
-            );
+
+    unless ($dss->am_system_perl) {
+        close( $out ) or warn $log->warn( "Unable to close output file" );
+        unlink $deps_outfile;
+        die $log->fatal( "Not running the system perl; not able to re-use system packages" );
     }
 
+    my $prereqs = $class->_get_immediate_prereqs( $config );
+    my $requirements = $prereqs->merged_requirements();
+    unless  ($requirements->accepts_module( 'perl', $])) {
+        close( $out ) or warn $log->warn( "Unable to close output file" );
+        unlink $deps_outfile;
+        my $perl_version = version->parse( $] )->normal;
+        die $log->fatal( "Perl version ($perl_version) not compliant with LedgerSMB " . $config->version
+                         . "; requires: " . $requirements->requirements_for_module( 'perl' ));
+    }
+
+    $dss->prepare_pkg_resolver_environment( $config );
     my $exception;
     do {
         local $@ = undef;
         my $failed = not eval {
-            my @remarks = $dss->validate_env(
-                $config,
-                compute_deps => 1,
-                );
-
-            $class->_build_install_tree( $dss, $config->installpath, $config->version );
-
             $log->info( "Computing O/S packages for declared dependencies" );
             my ($deps, $mods) = $class->_compute_dep_pkgs( $dss, $config );
 
-            my $json = JSON::PP->new->utf8->canonical;
             say $out $json->encode( { identifier => $dss->dependency_packages_identifier,
                                       packages => $deps,
                                       modules => $mods,
                                       name => $dss->name,
-                                      version => "1" } );
+                                      'schema-version' => "1" } );
 
             return 1;
         };
-        $exception = $@;
+        $exception = $@ if $failed;
 
         if ($config->effective_uninstall_env) {
             $log->warning( "Cleaning up Perl module installation dependencies" );
