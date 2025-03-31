@@ -52,8 +52,6 @@ necessary O/S packages.
 ```mermaid
 flowchart TD
     pre_A@{ shape: start }
-    --> pre_A2(Check have perlbrew)
-    --> pre_A3(Check running system Perl)
     --> pre_A5(Check have compiler)
     --> pre_A7(Check have C library headers)
     --> pre_A6(Check have make)
