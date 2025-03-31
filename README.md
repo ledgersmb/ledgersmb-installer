@@ -65,11 +65,11 @@ flowchart TD
     pre_B1 --> |No| pre_D(Grab 'cpanfile' from GitHub)
     pre_C --> |Yes| pre_C1{Can install pkgs}
     pre_C --> |No| pre_D
-    pre_C1 --> |Yes: check module builder| pre_K
+    pre_C1 --> |Yes| pre_omicron(Check & install builder environment) --> pre_K
     pre_C1 --> |No| pre_D
     pre_D --> pre_E{Running suitable perl}
 
-    pre_E --> |Yes: check module builder| pre_alpha{Running suitable **system** perl}
+    pre_E --> |Yes| pre_omega(Check & install builder environment) --> pre_alpha{Running suitable **system** perl}
     pre_E --> |No| pre_beta{Have suitable perl}
     pre_beta --> |No: assert other prereqs| pre_E1b
     pre_beta --> |Yes| pre_gamma(Self-invoke with suitable perl)
