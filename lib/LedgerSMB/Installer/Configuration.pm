@@ -44,8 +44,6 @@ sub retrieve_precomputed_deps($self, $name, $id) {
     return unless $name and $id;
 
     my $http = HTTP::Tiny->new;
-    my $arch = `dpkg --print-architecture`;
-    chomp($arch);
     my $url  = $self->dependency_url($name, $id);
 
     $log->info( "Retrieving dependency listing from $url" );
