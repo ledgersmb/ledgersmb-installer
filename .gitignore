@@ -44,3 +44,7 @@ inc/
 /.plx/
 /devel/
 /dev/plx
+
+# docker tester
+docker/ledgersmb-installer
+
