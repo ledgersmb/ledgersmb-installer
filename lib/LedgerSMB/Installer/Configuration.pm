@@ -122,7 +122,7 @@ sub effective_uninstall_env( $self ) {
         return $self->uninstall_env;
     }
 
-    return $self->prepare_env;
+    return $self->effective_prepare_env;
 }
 
 sub option_callbacks($self, $options) {

@@ -114,8 +114,10 @@ sub prepare_pkg_resolver_environment($self, $config) {
     unless ($? == 0) {
         push @new_pkgs, 'apt-file';
     }
-    $config->mark_pkgs_for_cleanup( \@new_pkgs );
-    $self->pkg_install( \@new_pkgs );
+    if ($config->effective_prepare_env) {
+        $config->mark_pkgs_for_cleanup( \@new_pkgs );
+        $self->pkg_install( \@new_pkgs );
+    }
     $self->have_cmd( 'apt-file',     $config->effective_compute_deps );
     $self->have_cmd( 'dh-make-perl', $config->effective_compute_deps );
 }
