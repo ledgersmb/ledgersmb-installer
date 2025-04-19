@@ -26,6 +26,9 @@ use LedgerSMB::Installer::Configuration;
 my $http = HTTP::Tiny->new( agent => 'LedgerSMB-Installer/0.1' );
 my $json = JSON::PP->new->canonical;
 
+sub _post_boot_configure($class, $dss, $config) {
+    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
+}
 
 sub _boot($class, $args, $options) {
     my $dss = $class->_load_dist_support;
@@ -42,8 +45,7 @@ sub _boot($class, $args, $options) {
     # assume $locallib to be inside $installpath
     $config->normalize_paths;
 
-    Log::Any::Adapter->set('Stdout', log_level => $config->loglevel);
-
+    $class->_post_boot_configure( $dss, $config );
     return ($dss, $config);
 }
 
