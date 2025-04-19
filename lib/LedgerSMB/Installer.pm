@@ -288,6 +288,7 @@ sub compute($class, @args) {
         die $log->fatal( "Not running the system perl; not able to re-use system packages" );
     }
 
+    ###TODO: _get_immediate_prereqs may throw
     my $prereqs = $class->_get_immediate_prereqs( $config );
     my $requirements = $prereqs->merged_requirements();
     unless  ($requirements->accepts_module( 'perl', $])) {
@@ -298,6 +299,7 @@ sub compute($class, @args) {
                          . "; requires: " . $requirements->requirements_for_module( 'perl' ));
     }
 
+    ###TODO: prepare_pkg_resolver_environment may throw
     $dss->prepare_pkg_resolver_environment( $config );
     my $exception;
     do {

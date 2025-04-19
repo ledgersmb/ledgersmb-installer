@@ -31,7 +31,7 @@ sub new( $class, %args ) {
 }
 
 sub dependency_url($self, $distro, $id) {
-    return "https://download.ledgersmb.org/f/dependencies/$distro/$id.json" ;
+    return "https://download.ledgersmb.org/f/dependencies/$distro/$id.json";
 }
 
 sub have_deps($self) {
