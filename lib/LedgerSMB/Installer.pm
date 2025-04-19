@@ -320,6 +320,7 @@ sub compute($class, @args) {
         };
         $exception = $@ if $failed;
 
+        $log->info( "Dependencies written to $deps_outfile" );
         if ($config->effective_uninstall_env) {
             $log->warning( "Cleaning up Perl module installation dependencies" );
             $dss->cleanup_env($config);
@@ -334,16 +335,12 @@ sub download($class, @args) {
 }
 
 sub help($class, @args) {
-    say <<~EOT;
-    $0 version CLONED
-
-      Commands:
-        compute
-        download
-        install
-        help
-        system-id
-    EOT
+    my $help_text = do {
+        local $/ = undef;
+        <DATA>;
+    };
+    $help_text =~ s/\bSCRIPT\b/$0/g;
+    say $help_text;
 
     return 0;
 }
@@ -482,3 +479,14 @@ sub run($class, $cmd, @args) {
 
 
 1;
+
+__DATA__
+SCRIPT version CLONED
+Usage: SCRIPT [command] [option ..]
+
+  Commands:
+    compute
+    download
+    install
+    help
+    system-id
