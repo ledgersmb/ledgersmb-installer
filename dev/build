@@ -2,7 +2,13 @@
 
 set -x
 
-version="$1 ($(date --iso))"
+if [[ -n "$1" ]]
+then
+    ver="$1"
+else
+    ver="<DEV>"
+fi
+version="$ver ($(date --iso))"
 
 use_mod=
 use_mod="$use_mod --use=Log::Any"
