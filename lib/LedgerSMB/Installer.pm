@@ -232,14 +232,33 @@ sub _download($class, $installpath, $version) {
     };
 }
 
+# mapping taken from File::Spec
+my %module = (
+    MSWin32 => 'win32',
+    os2     => 'os2',
+    VMS     => 'vms',
+    NetWare => 'win32',
+    symbian => 'win32',
+    dos     => 'os2',
+    cygwin  => 'cygwin',
+    amigaos => 'amigaos',
+    linux   => 'linux'    # not mapped in File::Spec
+    );
+
+sub _get_os($class) {
+    return $module{$^O} || 'unix';
+}
+
 sub _load_dist_support($class) {
-    $log->info( "Detected O/S: $^O" );
-    my $oss_class = "LedgerSMB::Installer::OS::$^O";
+    my $OS = $class->_get_os;
+
+    $log->info( "Detected O/S: $OS" );
+    my $oss_class = "LedgerSMB::Installer::OS::$OS";
 
     local $@ = undef;
     unless (eval "require $oss_class") {
         say "Unable to load $oss_class: $@";
-        say "No support for $^O";
+        say "No support for $OS";
         exit 2;
     }
 
