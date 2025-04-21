@@ -65,15 +65,19 @@
     <ul>
       <li>Linux
         <ul>
-          <li>Debian (apt-get / apt-file)</li>
+          <li>Debian (apt-get & non-system Perl)</li>
         </ul>
       </li>
     </ul>
-    <p>Dependencies that are not available as system packages will be
+    <p>Modules that are not available as system packages will be
       installed from <a href="https://metacpan.org">CPAN</a> distributions.
-      Platforms without package manager support will install <em>all</em>
-      dependencies from CPAN.</p>
-    <p></p>
+      Platforms without package manager support (including non-system Perl
+      installations) will install <em>all</em> dependencies from CPAN.</p>
+    <p>Libraries which can be installed from CPAN will be installed when
+      missing (e.g. libxml2). Especially the libpq5 (PostgreSQL client library)
+      cannot be installed by the installer if it's not available as a system
+      package. On systems without package manager support, this dependency needs
+      to exist on the system before starting the installation.</p>
 
 
     <h2 id="download">Installer download</h2>

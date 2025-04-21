@@ -66,6 +66,7 @@ sub _build_install_tree($class, $dss, $installpath, $version) {
     $dss->untar( File::Spec->catfile( $installpath, $archive),
                  $installpath,
                  strip_components => 1 );
+    $config->cpan_file( File::Spec->catfile( $installpath, 'cpanfile' ) );
 
     $log->info( "Removing extracted release tarball" );
     remove_tree(               # croaks on fatal errors
@@ -234,6 +235,63 @@ sub _download($class, $installpath, $version) {
     };
 }
 
+sub _find_executable($class, $dss, $executable, $dirs) {
+    while (my $dir = shift $dirs->@*) {
+        my $exe = File::Spec->catfile( $dir, $dss->executable_name( $executable ) );
+        $log->trace( "Found $executable: $exe; but not executable" )
+            if -e $exe and not -x $exe;
+        my $rv = -x $exe ? $exe : '';
+
+        if ($rv) {
+            $log->debug( "Searching for $executable; found $exe" );
+            return $rv;
+        }
+    }
+    return undef;
+}
+
+# This function is borrowed from App::Info::RDBMS::PostgreSQL v0.57
+# because that is what DBD::Pg uses to identify where pg_config lives
+sub _search_bin_dirs($class) {
+    return (( exists $ENV{POSTGRES_HOME}
+          ? (File::Spec->catdir($ENV{POSTGRES_HOME}, "bin"))
+          : ()
+      ),
+      ( exists $ENV{POSTGRES_LIB}
+          ? (File::Spec->catdir($ENV{POSTGRES_LIB}, File::Spec->updir, "bin"))
+          : ()
+      ),
+      File::Spec->path,
+      qw(/usr/local/pgsql/bin
+         /usr/local/postgres/bin
+         /usr/lib/postgresql/bin
+         /opt/pgsql/bin
+         /usr/local/bin
+         /usr/local/sbin
+         /usr/bin
+         /usr/sbin
+         /bin),
+      'C:\Program Files\PostgreSQL\bin');
+}
+# end of borrowed code
+
+sub _find_pg_config($class, $dss, $config) {
+    my @dirs = $class->_search_bin_dirs;
+
+    # TODO: Check for pg_config in $config
+
+    return $class->_find_executable( $dss, 'pg_config', \@dirs );
+}
+
+sub _find_xml2_config($class, $dss, $config) {
+    return $class->_find_executable( $dss, 'xml2-config', [ File::Spec->path ] );
+}
+
+sub _find_latex($class, $dss, $config) {
+    return $class->_find_executable( $dss, 'latex', [ File::Spec->path ] );
+}
+
+
 # mapping taken from File::Spec
 my %module = (
     MSWin32 => 'win32',
@@ -354,6 +412,7 @@ sub install($class, @args) {
         );
 
     my $pkg_deps;
+    my @extra_pkgs;
     if ($dss->am_system_perl) {
         my $name = $dss->name;
         my $dep_pkg_id = $dss->dependency_packages_identifier;
@@ -402,23 +461,62 @@ sub install($class, @args) {
     }
 
     $log->info( "Checking for availability of DBD::Pg" );
-    unless (require DBD::Pg) {
+    unless (eval { require DBD::Pg; }) {
         # don't have DBD::Pg
 
-        # find pg_config
-        # find libpq5
-        # build against libpq5
-        ...;
+        my $pg_config = $class->_find_pg_config( $dss, $config );
+        die $log->fatal( "Missing 'pg_config' command to build DBD::Pg" )
+            unless $pg_config;
+        chomp( my $include_dir = `'$pg_config' --includedir` );
+
+        $log->debug( "Directory for PostgreSQL headers: $include_dir" );
+        my $header_file = File::Spec->catfile( $include_dir, 'libpq-fe.h' );
+
+        if (not -e $header_file) {
+            if (not $dss->pkg_can_install) {
+                die $log->fatal( "Missing 'libpq-fe.h' PostgreSQL header to build DBD::Pg" );
+            }
+
+            my ($run_deps, $build_deps) = $dss->pkg_deps_dbd_pg;
+            $config->mark_pkgs_for_cleanup( $build_deps );
+            push @extra_pkgs, $run_deps->@*, $build_deps->@*;
+        }
     }
 
     $log->info( "Checking for availability of LaTeX::Driver" );
-    unless (require LaTeX::Driver) {
+    unless (eval { require LaTeX::Driver; }) {
         # don't have LaTeX::Driver
 
-        # testing early, because this module only installs
+        # testing early, because LaTeX::Driver only installs
         # when LaTeX is installed...
 
-        ...;
+        my $latex = $class->_find_latex( $dss, $config );
+        if (not $latex) {
+            if (not $dss->pkg_can_install) {
+                die $log->fatal( "Missing 'latex' executable required for building 'LaTeX::Driver' module" );
+            }
+
+            my ($run_deps, $build_deps) = $dss->pkg_deps_latex;
+            $config->mark_pkgs_for_cleanup( $build_deps );
+            push @extra_pkgs, $run_deps->@*, $build_deps->@*;
+        }
+    }
+
+    unless (eval { require XML::LibXML; }
+            and eval { require XML::Twig; }) {
+        # don't have either XML::LibXML or XML::Twig
+
+        my $xml2_config = $class->_find_xml2_config( $dss, $config );
+        if (not $xml2_config) {
+            if (not $dss->pkg_can_install) {
+                warn $log->warning("Missing 'xml2-config' executable required for building XML::LibXML -- falling back to Alien::Libxml2" );
+            }
+            else {
+                my ($run_deps, $build_deps) = $dss->pkg_deps_xml;
+                $config->mark_pkgs_for_cleanup( $build_deps );
+                push @extra_pkgs, $run_deps->@*, $build_deps->@*;
+            }
+        }
     }
 
     goto PREPARE_TREE;
@@ -432,8 +530,15 @@ sub install($class, @args) {
     $dss->pkg_install( $pkg_deps );
 
   PREPARE_TREE:
+    if (@extra_pkgs) {
+        $log->info( "Installing build dependency packages: " . join(' ', @extra_pkgs) );
+        $dss->pkg_install( \@extra_pkgs );
+    }
     $dss->prepare_installer_environment( $config );
     $class->_build_install_tree( $dss, $config->installpath, $config->version );
+
+    ###TODO: ideally, we pass the immediate dependencies instead of the installation path;
+    # that allows selection of specific features in a later iteration
     $dss->cpanm_install( $config->installpath, $config->locallib );
     $rv = 0;
 

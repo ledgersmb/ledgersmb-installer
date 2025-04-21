@@ -122,4 +122,36 @@ sub prepare_pkg_resolver_environment($self, $config) {
     $self->have_cmd( 'dh-make-perl', $config->effective_compute_deps );
 }
 
+sub _rm_installed($pkgs) {
+    my %pkgs = map {
+        $_ => 1
+    } $pkgs->@*;
+    my $cmd = 'dpkg-query -W ' . join(' ', $pkgs->@*);
+    my $installed = `$cmd`;
+    delete $pkgs{$_} for (
+        map {
+            my ($pkg) = split( /\t/, $_ );
+            $pkg =~ s/:.*$//r;
+        } split( /\n/, $installed )
+        );
+
+    return [ keys %pkgs ];
+}
+
+sub pkg_deps_latex($self) {
+    return (_rm_installed([ qw(texlive-latex-recommended texlive-fonts-recommended
+                 texlive-plain-generic texlive-xetex) ]),
+            []);
+}
+
+sub pkg_deps_xml($self) {
+    return (_rm_installed([ qw(libxml2) ]),
+            _rm_installed([ qw(libxml2-dev) ]));
+}
+
+sub pkg_deps_dbd_pg($self) {
+    return (_rm_installed([ qw(libpq5) ]),
+            _rm_installed([ qw(libpq-dev) ]));
+}
+
 1;

@@ -53,6 +53,10 @@ sub have_cmd($self, $cmd, $fatal = 1, $extra_path = []) {
     return $executable;
 }
 
+sub executable_name($self, $command) {
+    return $command;
+}
+
 sub have_pkgs($self, $pkgs) {
 }
 
