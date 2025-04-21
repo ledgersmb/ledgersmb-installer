@@ -49,7 +49,7 @@ sub _boot($class, $args, $options) {
     return ($dss, $config);
 }
 
-sub _build_install_tree($class, $dss, $installpath, $version) {
+sub _build_install_tree($class, $dss, $config, $installpath, $version) {
     my $archive = "ledgersmb-$version.tar.gz";
 
     $log->info( "Creating installation path $installpath" );
@@ -66,7 +66,7 @@ sub _build_install_tree($class, $dss, $installpath, $version) {
     $dss->untar( File::Spec->catfile( $installpath, $archive),
                  $installpath,
                  strip_components => 1 );
-    $config->cpan_file( File::Spec->catfile( $installpath, 'cpanfile' ) );
+    $config->cpanfile( File::Spec->catfile( $installpath, 'cpanfile' ) );
 
     $log->info( "Removing extracted release tarball" );
     remove_tree(               # croaks on fatal errors
@@ -535,7 +535,7 @@ sub install($class, @args) {
         $dss->pkg_install( \@extra_pkgs );
     }
     $dss->prepare_installer_environment( $config );
-    $class->_build_install_tree( $dss, $config->installpath, $config->version );
+    $class->_build_install_tree( $dss, $config, $config->installpath, $config->version );
 
     ###TODO: ideally, we pass the immediate dependencies instead of the installation path;
     # that allows selection of specific features in a later iteration
