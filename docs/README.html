@@ -51,6 +51,7 @@
       <li><a href="#download">Download</a></li>
       <li><a href="#commands">Commands</a></li>
       <li><a href="#options">Options</a></li>
+      <li><a href="#bugs">Bugs and questions</a></li>
     </ol>
 
 
@@ -110,7 +111,7 @@
 
     <h2 id="commands">Commands</h2>
     <dl>
-      <dt><code>ledgersmb-installer install [options] &lt;version&gt;</code></dt>
+      <dt><code>ledgersmb-installer install [options]</code></dt>
       <dd>Installs the indicated LedgerSMB version, building on the host
         operating system provided packages, on supported platforms.</dd>
 
@@ -188,8 +189,12 @@
 
       <dt><code>--[no-]system-packages</code></dt>
       <dd>Default value: <code>--system-packages</code> if running as a user with package
-        installation rights (usually <code>root</code>).<br />
-        If the distribution does </dd>
+        installation rights (usually <code>root</code>).</dd>
+
+      <dt><code>--version=&lt;version&gt;</code></dt>
+      <dd>Default value: <code>--version=latest</code><br />
+        Specifies which version to install, or retrieves the version number of the
+        latest release from GitHub.</dd>
 
       <dt>
     </dl>
@@ -198,6 +203,15 @@
     <h3 id="system-id-options">system-id</h3>
     <p>There are no options specific to this command.</p>
 
+    <h2 id="bugs"></h2>
+
+    <p>The project is hosted on GitHub, as part of the <a href="https://github.com/ledgersmb">
+        LedgerSMB organization</a>. Please file any bugs you run into <a href="https://github.com/ledgersmb/ledgersmb-installer/issues/new?template=bug_report.md">
+        using the provided template</a>.
+    </p>
+
+    <p>For improvement ideas, general questions and other conversations, please use
+      <a href="https://github.com/ledgersmb/ledgersmb-installer/discussions">GitHub Discussions</a>.</p>
 
   </body>
 </html>
