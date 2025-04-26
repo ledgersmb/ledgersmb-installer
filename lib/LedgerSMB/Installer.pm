@@ -411,13 +411,13 @@ sub install($class, @args) {
           'local-lib=s', 'log-level=s', 'verify-sig!', 'version=s' ]
         );
 
-    my $pkg_deps;
+    my ($pkg_deps, $unmapped_mods);
     my @extra_pkgs;
     if ($dss->am_system_perl) {
         my $name = $dss->name;
         my $dep_pkg_id = $dss->dependency_packages_identifier;
         if ($config->sys_pkgs) {
-            $pkg_deps = $config->retrieve_precomputed_deps($name, $dep_pkg_id);
+            ($pkg_deps, $unmapped_mods) = $config->retrieve_precomputed_deps($name, $dep_pkg_id);
         }
         if ($pkg_deps) {
             if ($dss->pkg_can_install()) {
@@ -457,12 +457,16 @@ sub install($class, @args) {
     $dss->prepare_builder_environment( $config );
 
     if ($dss->am_system_perl and $dss->pkg_can_install) {  # and $dss->deps_can_map
-        goto COMPUTE_SYS_PKGS;
+        $dss->prepare_pkg_resolver_environment( $config );
+        ($pkg_deps, $unmapped_mods) = $class->_compute_dep_pkgs( $dss, $config );
     }
 
     $log->info( "Checking for availability of DBD::Pg" );
-    unless (eval { require DBD::Pg; }) {
+    unless (eval { require DBD::Pg; } # loadable, or
+            or not grep { $_ eq 'DBD::Pg' } $unmapped_mods->@* # 'not unmapped' == mapped
+        ) {
         # don't have DBD::Pg
+        # *and* won't install as part of $pkg_deps
 
         my $pg_config = $class->_find_pg_config( $dss, $config );
         die $log->fatal( "Missing 'pg_config' command to build DBD::Pg" )
@@ -484,8 +488,11 @@ sub install($class, @args) {
     }
 
     $log->info( "Checking for availability of LaTeX::Driver" );
-    unless (eval { require LaTeX::Driver; }) {
+    unless (eval { require LaTeX::Driver; } # loadable, or
+            or not grep { $_ eq 'LaTeX::Driver' } $unmapped_mods->@* # 'not unmapped' == mapped
+        ) {
         # don't have LaTeX::Driver
+        # *and* won't install as part of $pkg_deps
 
         # testing early, because LaTeX::Driver only installs
         # when LaTeX is installed...
@@ -519,11 +526,7 @@ sub install($class, @args) {
         }
     }
 
-    goto PREPARE_TREE;
-
-  COMPUTE_SYS_PKGS:
-    $dss->prepare_pkg_resolver_environment( $config );
-    ($pkg_deps) = $class->_compute_dep_pkgs( $dss, $config );
+    goto PREPARE_TREE if (not $pkg_deps or not $pkg_deps->@*);
 
   INSTALL_SYS_PKGS:
     $log->info( "Installing O/S packages: " . join(' ', $pkg_deps->@*) );

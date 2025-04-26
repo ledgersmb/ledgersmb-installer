@@ -59,7 +59,7 @@ sub retrieve_precomputed_deps($self, $name, $id) {
             );
     }
     $self->{_deps_retrieved} = 1;
-    return $pkgs;
+    return ($self->{_deps}->{packages}, $self->{_deps}->{modules});
 }
 
 sub mark_pkgs_for_cleanup($self, $pkgs) {
