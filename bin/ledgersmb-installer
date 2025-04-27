@@ -49,7 +49,7 @@ sub validate_perl_env {
         say "   $_" for (@missing);
         say $failed_validate_msg;
 
-        die "Aborting setup...\n";
+        die "Aborting installation...\n";
     }
 }
 

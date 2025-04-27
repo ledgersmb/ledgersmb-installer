@@ -1,5 +1,6 @@
 
 requires 'perl', '5.34.0';
+requires 'Devel::CheckLib';
 requires 'Log::Any';
 requires 'Module::CPANfile';
 
