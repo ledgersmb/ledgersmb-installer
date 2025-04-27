@@ -26,8 +26,8 @@ sub name($self) {
 
 sub dependency_packages_identifier($self) {
     my $arch;
-    if (`dnf --version | grep dnf5`) {
-        (undef, $arch) = split(/ *= */, `dnf --dump-variables 2>/dev/null | grep 'basearch = '`);
+    if (my $dnf5 = $self->have_cmd( 'dnf5' )) {
+        (undef, $arch) = split(/ *= */, `'$dnf5' --dump-variables 2>/dev/null | grep 'basearch = '`);
     }
     else {
         $arch = `python3 -c 'import dnf; print(dnf.Base().conf.basearch)'`;
@@ -39,8 +39,9 @@ sub dependency_packages_identifier($self) {
 
 sub pkgs_from_modules($self, $mods) {
     my (%pkgs, @unmapped);
+    my $dnf = $self->have_cmd( 'dnf' );
     while (my $mod = shift $mods->@*) {
-        my $pkg = `"$self->{cmd}->{'dnf'}" repoquery --whatprovides 'perl($mod)' --queryformat '%{name}' 2>/dev/null`;
+        my $pkg = `'$dnf' repoquery --whatprovides 'perl($mod)' --queryformat '%{name}' 2>/dev/null`;
         chomp($pkg);
         if ($pkg) {
             $pkgs{$pkg} //= [];
@@ -63,7 +64,7 @@ sub pkg_install($self, $pkgs) {
     $pkgs //= [];
     my $dnf = $self->have_cmd( 'dnf' );
     my $cmd;
-    $cmd = "$dnf install -q -y " . join(' ', $pkgs->@*);
+    $cmd = "'$dnf' install -q -y " . join(' ', $pkgs->@*);
     $log->debug( "system(): " . $cmd );
     system($cmd) == 0
         or croak $log->fatal( "Unable to install required packages through dnf: $!" );
@@ -72,7 +73,7 @@ sub pkg_install($self, $pkgs) {
 sub pkg_uninstall($self, $pkgs) {
     $pkgs //= [];
     my $dnf = $self->have_cmd( 'dnf' );
-    my $cmd = "$dnf remove -q -y " . join(' ', $pkgs->@*);
+    my $cmd = "'$dnf' remove -q -y " . join(' ', $pkgs->@*);
     $log->debug( "system(): " . $cmd );
     system($cmd) == 0
         or croak $log->fatal( "Unable to uninstall packages through dnf: $!" );
@@ -83,7 +84,8 @@ sub cleanup_env($self, $config, %args) {
 }
 
 sub prepare_builder_environment($self, $config) {
-    my $have_c_development = `dnf group list --installed | grep '^c-development'`;
+    my $dnf = $self->have_cmd( 'dnf' );
+    my $have_c_development = `'$dnf' group list --installed | grep '^c-development'`;
     unless ($? == 0) {
         $config->mark_pkgs_for_cleanup( [ '@c-development' ] );
         $self->pkg_install( [ '@c-development' ] );
@@ -91,7 +93,8 @@ sub prepare_builder_environment($self, $config) {
 }
 
 sub prepare_installer_environment($self, $config) {
-    my $have_make = `dnf repoquery --installed --queryformat '%{name}' make`;
+    my $dnf = $self->have_cmd( 'dnf' );
+    my $have_make = `'$dnf' repoquery --installed --queryformat '%{name}' make`;
     unless ($? == 0) {
         $config->mark_pkgs_for_cleanup( [ 'make' ] );
         $self->pkg_install( [ 'make' ] );
@@ -107,7 +110,8 @@ sub _rm_installed($pkgs) {
     my %pkgs = map {
         $_ => 1
     } $pkgs->@*;
-    my $cmd = q{dnf repoquery --installed --queryformat '%{name}\n' } . join(' ', $pkgs->@*);
+    my $dnf = $self->have_cmd( 'dnf' );
+    my $cmd = qq{'$dnf' repoquery --installed --queryformat '%{name}\\n' } . join(' ', $pkgs->@*);
     my $installed = `$cmd`;
     delete $pkgs{$_} for (split( /\n/, $installed ));
 
