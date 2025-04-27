@@ -35,7 +35,7 @@ sub validate_perl_env {
                      Getopt::Long HTTP::Tiny IO::Socket::SSL)) {
         my $have_mod = eval "require $mod";
         unless ($have_mod) {
-            if ($@ =~ /^Can't locate \Q$mod\E in \@INC/) {
+            if ($@ =~ /^Can't locate \S+ in \@INC/) {
                 push @missing, $mod;
             }
             else {
@@ -45,7 +45,7 @@ sub validate_perl_env {
     }
 
     if (@missing) {
-        say 'Your installation is missing these modules:';
+        say 'Your installation is missing - or unable to load - these modules:';
         say "   $_" for (@missing);
         say $failed_validate_msg;
 
