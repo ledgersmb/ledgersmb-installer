@@ -91,16 +91,16 @@
     <p>
       The installer supports installation of LedgerSMB on a wide range of
       operating systems and platforms. When the installer is allowed to
-      install packages through the systems package manager, it will do so
-      to satisfy missing dependencies. The package managers of these systems
-      are supported at the moment:</p>
+      install packages through the system package manager, it will do so
+      to satisfy missing dependencies. The package managers of the following
+      systems are supported at the moment:</p>
     <ul>
       <li>Debian (apt) and its derivatives</li>
       <li>Fedora (dnf) and its derivatives</li>
     </ul>
     <p>
       Perl dependencies which
-      can't be installed from the system's package repository, will be installed
+      can't be installed from the system's package repository will be installed
       from <a href="https://www.cpan.org/">CPAN</a>. This means that installation
       on a system with an unrecognized package manager, <em>all</em> modules will be
       installed from CPAN. OpenSUSE was used to test that the installer works on
@@ -269,14 +269,13 @@
       Platforms without package manager support (including non-system Perl
       installations) will install <em>all</em> dependencies from CPAN. This
       process depends on developer tools being available. On supported platforms
-      the installer will temporarily add these tools (removing them after the
+      the installer will temporarily add these tools (and remove them after the
       installation completes).</p>
     <p>Some dependencies (most notably libpq [PostgreSQL client library])
-      cannot be installed by the installer. On systems without package manager support,
-      this dependency must exist on the system before starting the installation. The
-      same applies to the <code>latex</code> dependency; without it, it's impossible
-      to install the <code>LaTeX::Driver</code> module from CPAN.</p>
-
+      cannot be installed by the installer on systems without package manager support.
+      In such cases, the dependencies must exist on the system before starting
+      installation. The same applies to the <code>latex</code> dependency; without it,
+      it's impossible to install the <code>LaTeX::Driver</code> module from CPAN.</p>
 
   </body>
 </html>
