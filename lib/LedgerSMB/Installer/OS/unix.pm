@@ -60,7 +60,23 @@ sub cpanm_install($self, $installpath, $locallib) {
         }
     }
 
+    local $ENV{PERL_CPANM_HOME} = File::Spec->catdir( $installpath, 'tmp' );
     my @cmd = (
+        $self->{cmd}->{cpanm},
+        '--notest',
+        '--metacpan',
+        '--with-recommends',
+        '--local-lib', $locallib,
+        'XML::Parser'
+        );
+
+    unless (eval { require XML::Parser; 1; }) {
+        $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
+        system(@cmd) == 0
+            or croak $log->fatal( "Failure running cpanm - exit code: $?" );
+    }
+
+    @cmd = (
         $self->{cmd}->{cpanm},
         '--notest',
         '--metacpan',
@@ -69,12 +85,15 @@ sub cpanm_install($self, $installpath, $locallib) {
         '--with-feature=openoffice',
         '--with-recommends',
         '--local-lib', $locallib,
+        ###TODO: Instead of running --installdeps, we have the exact list
+        # of dependencies we want to install. It's better to use that for
+        # better flexibility (e.g. to be able to change the supported
+        # feature set.
         '--installdeps', $installpath
         );
 
     $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
 
-    local $ENV{PERL_CPANM_HOME} = File::Spec->catdir( $installpath, 'tmp' );
     system(@cmd) == 0
         or croak $log->fatal( "Failure running cpanm - exit code: $?" );
     remove_tree( File::Spec->catdir( $installpath, 'tmp' ) );

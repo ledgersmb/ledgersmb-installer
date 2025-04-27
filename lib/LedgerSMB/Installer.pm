@@ -403,6 +403,17 @@ sub help($class, @args) {
     return 0;
 }
 
+sub _module_will_install($class, $mod, $pkgs, $unmapped) {
+    # no packages will be installed:
+    return 0 if ((not $pkgs) or (not $pkgs->@*));
+
+    # package in the list of those not installed through a package:
+    return 0 if (grep { $mod eq $_ } $unmapped->@*);
+
+    # package must be in one of the packages being installed
+    return 1;
+}
+
 sub install($class, @args) {
     my $rv = 1;
     my ($dss, $config) = $class->_boot(
@@ -462,9 +473,8 @@ sub install($class, @args) {
     }
 
     $log->info( "Checking for availability of DBD::Pg" );
-    unless (eval { require DBD::Pg; } # loadable, or
-            or not grep { $_ eq 'DBD::Pg' } $unmapped_mods->@* # 'not unmapped' == mapped
-        ) {
+    if (not eval { require DBD::Pg; 1; } # not loadable, and
+        and not $class->_module_will_install( 'DBD::Pg', $pkg_deps, $unmapped_mods )) {
         # don't have DBD::Pg
         # *and* won't install as part of $pkg_deps
 
@@ -486,11 +496,19 @@ sub install($class, @args) {
             push @extra_pkgs, $run_deps->@*, $build_deps->@*;
         }
     }
+    elsif (eval { require DBD::Pg; 1; }) {
+        $log->info( "DBD::Pg is loadable" );
+    }
+    elsif (not grep { $_ eq 'DBD::Pg' } $unmapped_mods->@*) {
+        $log->info( "DBD::Pg will be installed" );
+    }
+    else {
+        $log->fatal( "Internal error: DBD::Pg not available and won't be installed, but build prereqs not checked?!?!" );
+    }
 
     $log->info( "Checking for availability of LaTeX::Driver" );
-    unless (eval { require LaTeX::Driver; } # loadable, or
-            or not grep { $_ eq 'LaTeX::Driver' } $unmapped_mods->@* # 'not unmapped' == mapped
-        ) {
+    if (not eval { require LaTeX::Driver; 1; } # loadable, and
+        and not $class->_module_will_install( 'LaTeX::Driver', $pkg_deps, $unmapped_mods )) {
         # don't have LaTeX::Driver
         # *and* won't install as part of $pkg_deps
 
@@ -508,9 +526,62 @@ sub install($class, @args) {
             push @extra_pkgs, $run_deps->@*, $build_deps->@*;
         }
     }
+    elsif (eval { require LaTeX::Driver; 1; }) {
+        $log->info( "LaTeX::Driver is loadable" );
+    }
+    elsif (not grep { $_ eq 'LaTeX::Driver' } $unmapped_mods->@*) {
+        $log->info( "LaTeX::Driver will be installed" );
+    }
+    else {
+        $log->fatal( "Internal error: LaTeX::Driver not available and won't be installed, but build prereqs not checked?!?!" );
+    }
 
-    unless (eval { require XML::LibXML; }
-            and eval { require XML::Twig; }) {
+    $log->info( "Checking for availability of XML::Parser" );
+    if (not eval { require XML::Parser; 1; }
+        and not $class->_module_will_install( 'XML::Parser', $pkg_deps, $unmapped_mods)) {
+
+        $log->info( "Checking availability of libexpat" );
+        my $incpath = $ENV{EXPATINCPATH} // '';
+        my $libpath = $ENV{EXPATLIBPATH} // '';
+
+        # Devel::CheckLib tries to find the C compiler when use-d
+        # however, we might be installing it as part of the installation
+        # process, so we don't want Devel::CheckLib to check when loading the script...
+        eval "use Devel::CheckLib qw(assert_lib);";
+        unless (eval { assert_lib( lib => [qw(expat)],
+                                   header => ['expat.h'],
+                                   incpath => $incpath,
+                                   ( $libpath ? (libpath => $libpath) : () )
+                           ); 1; }) {
+            if (not $dss->pkg_can_install) {
+                ###TODO: We could push Alien::Expat into @unmapped_mods
+                # instead of bailing out here...
+                die $log->fatal( "Missing XML parser library Expat blocking installation of XML::Parser" );
+            }
+            else {
+                my ($run_deps, $build_deps) = $dss->pkg_deps_expat;
+                $config->mark_pkgs_for_cleanup( $build_deps );
+                push @extra_pkgs, $run_deps->@*, $build_deps->@*;
+            }
+        }
+        else {
+            $log->info( "Found expat header and library for XML::Parser compilation" );
+        }
+    }
+    elsif (eval { require XML::Parser; 1; }) {
+        $log->info( "XML::Parser is loadable" );
+    }
+    elsif (not grep { $_ eq 'XML::Parser' } $unmapped_mods->@*) {
+        $log->info( "XML::Parser will be installed" );
+    }
+    else {
+        $log->fatal( "Internal error: XML::Parser not available and won't be installed, but build prereqs not checked?!?!" );
+    }
+
+    if ((not eval { require XML::LibXML; 1; }
+         and not $class->_module_will_install( 'XML::LibXML', $pkg_deps, $unmapped_mods ))
+        and (not eval { require XML::Twig; 1; }
+             and not $class->_module_will_install( 'XML::Twig', $pkg_deps, $unmapped_mods ))) {
         # don't have either XML::LibXML or XML::Twig
 
         my $xml2_config = $class->_find_xml2_config( $dss, $config );

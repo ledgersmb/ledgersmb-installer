@@ -149,6 +149,10 @@ sub pkg_deps_xml($self) {
             _rm_installed([ qw(libxml2-dev) ]));
 }
 
+sub pkg_deps_expat($self) {
+    return (_rm_installed([ qw(libexpat1) ]),
+            _rm_installed([ qw(libexpat1-dev) ]));
+
 sub pkg_deps_dbd_pg($self) {
     return (_rm_installed([ qw(libpq5) ]),
             _rm_installed([ qw(libpq-dev) ]));

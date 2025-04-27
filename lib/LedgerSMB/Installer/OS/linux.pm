@@ -9,8 +9,64 @@ use Carp qw(croak);
 use Log::Any qw($log);
 
 sub new($class, %args) {
-    return bless {
-    }, $class;
+    return bless {}, $class;
+}
+
+sub name($self) {
+    return 'linux-generic';
+}
+
+sub dependency_packages_identifier($self) {
+    return 'linux-generic';
+}
+
+sub pkgs_from_modules($self, $mods) {
+    warn $log->warning('generic linux support does not include mapping modules to packages');
+    return ([], $mods);
+}
+
+sub pkg_can_install($self) {
+    return 0;
+}
+
+sub pkg_install($self, $pkgs) {
+    die $log->fatal('generic linux support does not include package manager support');
+}
+
+sub pkg_uninstall($self, $pkgs) {
+    die $log->fatal('generic linux support does not include package manager support');
+}
+
+sub cleanup_env($self, $config, %args) {
+    warn $log->fatal('generic linux support does not include package manager support');
+}
+
+sub prepare_builder_environment($self, $config) {
+    warn $log->warning('generic linux support does not allow creating build environment');
+}
+
+sub prepare_builder_environment($self, $config) {
+    warn $log->warning('generic linux support does not allow creating install environment');
+}
+
+sub prepare_pkg_resolver_environment($self, $config) {
+    warn $log->warning('generic linux support does not allow creating module-to-package mapping environment');
+}
+
+sub pkg_deps_latex($self) {
+    return ([], []);
+}
+
+sub pkg_deps_xml($self) {
+    return ([], []);
+}
+
+sub pkg_deps_expat($self) {
+    return ([], []);
+}
+
+sub pkg_deps_dbd_pg($self) {
+    return ([], []);
 }
 
 sub detect_dss($self) {
@@ -52,8 +108,10 @@ sub detect_dss($self) {
                     }
                     if (not $alt_dss_class) {
                         my $distros = join(', ', $self->{distro}->{ID}, @like_dists);
-                        die $log->error( 'Unable to load support for any of these linux '
-                                         . "distributions: $distros" );
+                        warn $log->warning( 'Unable to load support for any of these linux '
+                                          . "distributions: $distros" );
+                        warn $log->info( 'Continuing with generic linux support' );
+                        return $self;
                     }
                 }
                 else {
