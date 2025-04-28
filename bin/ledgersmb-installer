@@ -22,8 +22,8 @@ distribution:
 - perl-core (Fedora before 27, RedHat before 8 and derivatives)
 
 
-(Submit your extensionst to the above list to
-   https://github.com/ledgersmb/ledgersmb-installer/issues)
+(Submit an issue to https://github.com/ledgersmb/ledgersmb-installer/issues
+   to expand the above list with the package name for your favorite distribution)
 
 
 EOF
