@@ -65,21 +65,6 @@ sub cpanm_install($self, $installpath, $locallib) {
         $self->{cmd}->{cpanm},
         '--notest',
         '--metacpan',
-        '--with-recommends',
-        '--local-lib', $locallib,
-        'XML::Parser'
-        );
-
-    unless (eval { require XML::Parser; 1; }) {
-        $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
-        system(@cmd) == 0
-            or croak $log->fatal( "Failure running cpanm - exit code: $?" );
-    }
-
-    @cmd = (
-        $self->{cmd}->{cpanm},
-        '--notest',
-        '--metacpan',
         '--with-feature=starman',
         '--with-feature=latex-pdf-ps',
         '--with-feature=openoffice',
