@@ -4,6 +4,8 @@
 ledgersmb-installer - An installer for LedgerSMB, targetting as many platforms as possible
 on which the LedgerSMB server can run.
 
+The user instructions for downloading the most recent version of `ledgersmb-installer` are available at https://get.ledgersmb.org.
+
 # SYNOPSIS
 
 ```bash
