@@ -106,7 +106,7 @@ sub prepare_pkg_resolver_environment($self, $config) {
     $self->have_cmd( 'dnf',     $config->effective_compute_deps );
 }
 
-sub _rm_installed($pkgs) {
+sub _rm_installed($self, $pkgs) {
     my %pkgs = map {
         $_ => 1
     } $pkgs->@*;
@@ -119,23 +119,23 @@ sub _rm_installed($pkgs) {
 }
 
 sub pkg_deps_latex($self) {
-    return (_rm_installed([ qw(texlive-latex texlive-plain texlive-xetex) ]),
+    return ($self->_rm_installed([ qw(texlive-latex texlive-plain texlive-xetex) ]),
             []);
 }
 
 sub pkg_deps_xml($self) {
-    return (_rm_installed([ qw(libxml2) ]),
-            _rm_installed([ qw(libxml2-devel) ]));
+    return ($self->_rm_installed([ qw(libxml2) ]),
+            $self->_rm_installed([ qw(libxml2-devel) ]));
 }
 
 sub pkg_deps_expat($self) {
-    return (_rm_installed([ qw(expat) ]),
-            _rm_installed([ qw(expat-devel) ]));
+    return ($self->_rm_installed([ qw(expat) ]),
+            $self->_rm_installed([ qw(expat-devel) ]));
 }
 
 sub pkg_deps_dbd_pg($self) {
-    return (_rm_installed([ qw(libpq) ]),
-            _rm_installed([ qw(libpq-devel) ]));
+    return ($self->_rm_installed([ qw(libpq) ]),
+            $self->_rm_installed([ qw(libpq-devel) ]));
 }
 
 1;
