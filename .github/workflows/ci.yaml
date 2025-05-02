@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+    types: [opened, reopened, synchronize]
+
+jobs:
+  cancel-prior:
+    if: github.repository != 'ledgersmb/LedgerSMB' || startsWith(github.ref, 'refs/pull')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ github.token }}
+
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Perl environment
+        uses: shogo82148/actions-setup-perl@v1
+
+      - name: Run installation
+        run: |
+          dev/build
+          cp packed docker/ledgersmb-installer
+          chmod +x docker/ledgersmb-installer
+          docker build --progress=plain --build-arg SRC=bookworm-slim ./docker/
