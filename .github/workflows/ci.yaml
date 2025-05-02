@@ -32,6 +32,10 @@ jobs:
             osImage: debian:bookworm-slim
           - osVariant: debian
             osImage: ubuntu:noble
+          - osVariant: fedora
+            osImage: fedora:41
+          - osVariant: fedora
+            osImage: registry.access.redhat.com/ubi8/ubi:8.1
 
     steps:
       - name: Checkout
