@@ -37,6 +37,10 @@ jobs:
           - osVariant: fedora
             osImage: registry.access.redhat.com/ubi8/ubi:8.1
 
+          # Non-system Perl on a supported O/S (latest Perl; latest Debian)
+          - osVariant: debian
+            osImage: perl:latest
+
             # this uses OpenSUSE as 'unknown' linux variant
           - osVariant: unknown
             osImage: unknown
