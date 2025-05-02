@@ -17,9 +17,9 @@ use_mod="$use_mod --use=Devel::CheckLib"
 
 find . -name '*~' -delete
 
-dev/plx fatpack trace $use_mod bin/ledgersmb-installer
-dev/plx fatpack packlists-for `cat fatpacker.trace` > packlists
-dev/plx fatpack tree `cat packlists`
+fatpack trace $use_mod bin/ledgersmb-installer
+fatpack packlists-for `cat fatpacker.trace` > packlists
+fatpack tree `cat packlists`
 find fatlib/ -name '.packlist' -o -name '.*' -delete -o -name '*.pod' -delete
-dev/plx fatpack file bin/ledgersmb-installer > packed
+fatpack file bin/ledgersmb-installer > packed
 sed -i -e "s/version CLONED/version $version/" packed
