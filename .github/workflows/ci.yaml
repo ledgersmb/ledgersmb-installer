@@ -31,6 +31,9 @@ jobs:
 
       - name: Setup Perl environment
         uses: shogo82148/actions-setup-perl@v1
+        with:
+          install-modules-with: cpm
+          install-modules-args: --with-develop --with-configure
 
       - name: Run installation
         run: |
