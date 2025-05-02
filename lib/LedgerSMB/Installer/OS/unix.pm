@@ -36,7 +36,7 @@ sub prepare_installer_environment($self, $config) {
     $self->have_cmd('make');     # fatal
 }
 
-sub cpanm_install($self, $installpath, $locallib) {
+sub cpanm_install($self, $installpath, $locallib, $unmapped_mods) {
     unless ($self->{cmd}->{cpanm}) {
         make_path( File::Spec->catdir( $installpath, 'tmp' ) );
 
@@ -65,16 +65,9 @@ sub cpanm_install($self, $installpath, $locallib) {
         $self->{cmd}->{cpanm},
         '--notest',
         '--metacpan',
-        '--with-feature=starman',
-        '--with-feature=latex-pdf-ps',
-        '--with-feature=openoffice',
-        '--with-recommends',
+        '--without-recommends',
         '--local-lib', $locallib,
-        ###TODO: Instead of running --installdeps, we have the exact list
-        # of dependencies we want to install. It's better to use that for
-        # better flexibility (e.g. to be able to change the supported
-        # feature set.
-        '--installdeps', $installpath
+        $unmapped_mods->@*
         );
 
     $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );

@@ -473,6 +473,9 @@ sub install($class, @args) {
         $dss->prepare_pkg_resolver_environment( $config );
         ($pkg_deps, $unmapped_mods) = $class->_compute_dep_pkgs( $dss, $config );
     }
+    else {
+        $unmapped_mods = [ $class->_compute_all_deps( $config ) ];
+    }
 
     $log->info( "Checking for availability of DBD::Pg" );
     if (not eval { require DBD::Pg; 1; } # not loadable, and
@@ -615,7 +618,7 @@ sub install($class, @args) {
 
     ###TODO: ideally, we pass the immediate dependencies instead of the installation path;
     # that allows selection of specific features in a later iteration
-    $dss->cpanm_install( $config->installpath, $config->locallib );
+    $dss->cpanm_install( $config->installpath, $config->locallib, $unmapped_mods );
     $rv = 0;
 
   CLEANUP:
