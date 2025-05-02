@@ -14,6 +14,7 @@ use_mod=
 use_mod="$use_mod --use=Log::Any"
 use_mod="$use_mod --use=Module::CPANfile"
 use_mod="$use_mod --use=Devel::CheckLib"
+use_mod="$use_mod --use=Capture::Tiny"
 
 find . -name '*~' -delete
 

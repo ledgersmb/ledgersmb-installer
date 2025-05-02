@@ -9,6 +9,7 @@ use English;
 use HTTP::Tiny;
 use JSON::PP;
 
+use Capture::Tiny qw( capture_stdout );
 use Log::Any qw($log);
 
 sub new($class, %args) {
@@ -22,7 +23,9 @@ sub name($self) {
 }
 
 sub dependency_packages_identifier($self) {
-    my $arch = `dpkg --print-architecture`;
+    my ($arch, ) = capture_stdout {
+        system( qw( dpkg --print-architecture ) );
+    };
     chomp($arch);
     return "$self->{_distro}->{ID}-$self->{_distro}->{VERSION_CODENAME}-$arch";
 }
@@ -62,25 +65,35 @@ sub pkg_can_install($self) {
 sub pkg_install($self, $pkgs) {
     $pkgs //= [];
     my $apt_get = $self->have_cmd( 'apt-get' );
-    my $cmd;
-    $cmd = "DEBIAN_FRONTEND=noninteractive $apt_get update -q -y";
-    $log->debug( "system(): " . $cmd );
-    system($cmd) == 0
-        or croak $log->fatal( "Unable to update 'apt-get' package index: $!" );
+    my @cmd;
+    @cmd = ($apt_get, qw( update -q -y ));
+    do {
+        local $ENV{DEBIAN_FRONTEND} = 'noninteractive';
+        $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
+        system(@cmd) == 0
+            or croak $log->fatal( "Unable to update 'apt-get' package index: $!" );
+    };
 
-    $cmd = "DEBIAN_FRONTEND=noninteractive $apt_get install -q -y " . join(' ', $pkgs->@*);
-    $log->debug( "system(): " . $cmd );
-    system($cmd) == 0
-        or croak $log->fatal( "Unable to install required packages through apt-get: $!" );
+    @cmd = ($apt_get, qw( install -q -y ), $pkgs->@*);
+    do {
+        local $ENV{DEBIAN_FRONTEND} = 'noninteractive';
+        $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
+        system(@cmd) == 0
+            or croak $log->fatal( "Unable to install required packages through apt-get: $!" );
+    };
 }
 
 sub pkg_uninstall($self, $pkgs) {
     $pkgs //= [];
     my $apt_get = $self->have_cmd( 'apt-get' );
-    my $cmd = "DEBIAN_FRONTEND=noninteractive $apt_get autoremove --purge -q -y " . join(' ', $pkgs->@*);
-    $log->debug( "system(): " . $cmd );
-    system($cmd) == 0
-        or croak $log->fatal( "Unable to uninstall packages through apt-get: $!" );
+    my @cmd = ($apt_get, qw(autoremove --purge -q -y), $pkgs->@*);
+
+    do {
+        local $ENV{DEBIAN_FRONTEND} = 'noninteractive';
+        $log->debug( "system(): " . join(' ', map { "'$_'" } @cmd ) );
+        system(@cmd) == 0
+            or croak $log->fatal( "Unable to uninstall packages through apt-get: $!" );
+    };
 }
 
 sub cleanup_env($self, $config, %args) {
@@ -88,7 +101,9 @@ sub cleanup_env($self, $config, %args) {
 }
 
 sub prepare_builder_environment($self, $config) {
-    my $have_build_essential = `dpkg-query -W build-essential`;
+    my ($have_build_essential, ) = capture_stdout {
+        system( qw( dpkg-query -W build-essential ) );
+    };
     unless ($? == 0) {
         $config->mark_pkgs_for_cleanup( [ 'build-essential' ] );
         $self->pkg_install( [ 'build-essential' ] );
@@ -96,7 +111,9 @@ sub prepare_builder_environment($self, $config) {
 }
 
 sub prepare_installer_environment($self, $config) {
-    my $have_make = `dpkg-query -W make`;
+    my ($have_make, ) = capture_stdout {
+        system( qw( dpkg-query -W make ) );
+    };
     unless ($? == 0) {
         $config->mark_pkgs_for_cleanup( [ 'make' ] );
         $self->pkg_install( [ 'make' ] );
@@ -106,11 +123,15 @@ sub prepare_installer_environment($self, $config) {
 
 sub prepare_pkg_resolver_environment($self, $config) {
     my @new_pkgs;
-    my $have_dh_make_perl = `dpkg-query -W dh-make-perl`;
+    my ($have_dh_make_perl, ) = capture_stdout {
+        system( qw( dpkg-query -W dh-make-perl ) );
+    };
     unless ($? == 0) {
         push @new_pkgs, 'dh-make-perl';
     }
-    my $have_apt_file = `dpkg-query -W apt-file`;
+    my ($have_apt_file, ) = capture_stdout {
+        system( qw( dpkg-query -W apt-file ) );
+    };
     unless ($? == 0) {
         push @new_pkgs, 'apt-file';
     }
@@ -126,8 +147,10 @@ sub _rm_installed($pkgs) {
     my %pkgs = map {
         $_ => 1
     } $pkgs->@*;
-    my $cmd = 'dpkg-query -W ' . join(' ', $pkgs->@*);
-    my $installed = `$cmd`;
+    my @cmd = (qw(dpkg-query -W), $pkgs->@*);
+    my ($installed, ) = capture_stdout {
+        system( @cmd );
+    };
     delete $pkgs{$_} for (
         map {
             my ($pkg) = split( /\t/, $_ );
