@@ -25,6 +25,14 @@ jobs:
 
   install:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - osVariant: debian
+            osImage: debian:bookworm-slim
+          - osVariant: debian
+            osImage: ubuntu:noble
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +45,8 @@ jobs:
 
       - name: Run installation
         run: |
+          set -e -o pipefail
           dev/build
           cp packed docker/ledgersmb-installer
           chmod +x docker/ledgersmb-installer
-          docker build --progress=plain --build-arg SRC=bookworm-slim ./docker/
+          docker build --progress=plain --build-arg SRC=bookworm-slim --build-arg SRC=${{ matrix.osImage }} -f docker/Dockerfile.${{ matrix.osVariant }} ./docker/
