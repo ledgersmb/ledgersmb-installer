@@ -184,7 +184,9 @@ sub _compute_all_deps($class, $config) {
 
 sub _compute_dep_pkgs($class, $dss, $config ) {
     my @mods = $class->_compute_all_deps( $config );
-    my ($pkgs, $unmapped) = $dss->pkgs_from_modules( \@mods );
+
+    # the array passed in gets modified; copy @mods so we still have it below
+    my ($pkgs, $unmapped) = $dss->pkgs_from_modules( [ @mods ] );
 
     my $c = scalar(@mods);
     my $p = scalar(keys $pkgs->%*);
