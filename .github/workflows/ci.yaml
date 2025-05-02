@@ -37,6 +37,10 @@ jobs:
           - osVariant: fedora
             osImage: registry.access.redhat.com/ubi8/ubi:8.1
 
+            # this uses OpenSUSE as 'unknown' linux variant
+          - osVariant: unknown
+            osImage: unknown
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,4 +57,4 @@ jobs:
           dev/build
           cp packed docker/ledgersmb-installer
           chmod +x docker/ledgersmb-installer
-          docker build --progress=plain --build-arg SRC=bookworm-slim --build-arg SRC=${{ matrix.osImage }} -f docker/Dockerfile.${{ matrix.osVariant }} ./docker/
+          docker build --progress=plain --build-arg SRC=${{ matrix.osImage }} -f docker/Dockerfile.${{ matrix.osVariant }} ./docker/
