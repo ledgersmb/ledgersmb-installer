@@ -59,13 +59,15 @@ sub validate_perl_env {
           The installer depends on IO::Socket::SSL, which isn't loadable. Please
           install it; the library name on the various distributions is:
 
-          - libio-socket-ssl (Debian, Ubuntu, Mint and derivatives)
+          - libio-socket-ssl-perl (Debian, Ubuntu, Mint and derivatives)
           - perl-IO-Socket-SSL (Fedora, RedHat, and derivatives)
 
           (Submit an issue to https://github.com/ledgersmb/ledgersmb-installer/issues
              to expand the above list with the package name for your favorite distribution)
 
           EOF
+
+        die "Aborting installation...\n";
     }
 }
 
