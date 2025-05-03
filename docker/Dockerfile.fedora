@@ -2,8 +2,10 @@ ARG SRC=fedora:35
 FROM fedora:41
 
 ARG VERSION=1.12.4
+ARG USER_MODE=ROOT
 
-RUN dnf install -q -y perl
+RUN dnf install -q -y perl util-linux sudo
 
 COPY ledgersmb-installer /usr/bin/ledgersmb-installer
-RUN cd /srv ; ledgersmb-installer install --yes --no-verify-sig --log-level=trace --version=$VERSION
+COPY run-install /usr/bin/run-install
+RUN cd /srv ; run-install

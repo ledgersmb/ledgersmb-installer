@@ -2,13 +2,15 @@ ARG SRC=debian:buster-slim
 FROM $SRC
 
 ARG VERSION=1.12.4
+ARG USER_MODE=ROOT
 
 RUN echo -n "APT::Install-Recommends \"0\";\nAPT::Install-Suggests \"0\";\n" >> /etc/apt/apt.conf && \
     DEBIAN_FRONTEND=noninteractive apt-get -q -y update && \
     DEBIAN_FRONTEND=noninteractive apt-get -q -y upgrade && \
     DEBIAN_FRONTEND=noninteractive apt-get -q -y install \
-      perl libio-socket-ssl-perl ca-certificates
+      perl libio-socket-ssl-perl ca-certificates util-linux sudo
 
 COPY ledgersmb-installer /usr/bin/ledgersmb-installer
-RUN cd /srv ; ledgersmb-installer install --yes --no-verify-sig --log-level=trace --version=$VERSION
+COPY run-install /usr/bin/run-install
+RUN cd /srv ; run-install
 

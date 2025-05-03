@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -xe -o pipefail
+
+if [ "$USER_MODE" == "ROOT" ]
+then
+    ledgersmb-installer --yes --no-verify-sig --log-level=trace --version=$VERSION
+else
+    adduser --gecos '' johndoe
+    if [ "$USER_MODE" == "SUDO" ]
+    then
+        echo "johndoe ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+    fi
+    runuser -u johndoe -- ledgersmb-installer --yes --no-verify-sig --log-level=trace --version=$VERSION
+fi

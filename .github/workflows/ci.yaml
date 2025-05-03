@@ -30,20 +30,26 @@ jobs:
         include:
           - osVariant: debian
             osImage: debian:bookworm-slim
+            userMode: ROOT
           - osVariant: debian
             osImage: ubuntu:noble
+            userMode: ROOT
           - osVariant: fedora
             osImage: fedora:41
+            userMode: ROOT
           - osVariant: fedora
             osImage: registry.access.redhat.com/ubi8/ubi:8.1
+            userMode: ROOT
 
           # Non-system Perl on a supported O/S (latest Perl; latest Debian)
           - osVariant: debian
             osImage: perl:latest
+            userMode: ROOT
 
             # this uses OpenSUSE as 'unknown' linux variant
           - osVariant: unknown
             osImage: unknown
+            userMode: ROOT
 
     steps:
       - name: Checkout
@@ -57,8 +63,11 @@ jobs:
 
       - name: Run installation
         run: |
-          set -e -o pipefail
+          set -xe -o pipefail
           dev/build
           cp packed docker/ledgersmb-installer
           chmod +x docker/ledgersmb-installer
-          docker build --progress=plain --build-arg SRC=${{ matrix.osImage }} -f docker/Dockerfile.${{ matrix.osVariant }} ./docker/
+          docker build --progress=plain \
+                       --build-arg SRC=${{ matrix.osImage }} \
+                       --build-arg USER_MODE=${{ matrix.userMode }} \
+                       -f docker/Dockerfile.${{ matrix.osVariant }} ./docker/
