@@ -83,7 +83,7 @@ sub _get_cpanfile($class, $config) {
                $config->version)
         );
     unless ($response->{success}) {
-        die $log->fatal("Unable to get 'cpanfile' from GitHub: " + $response->{content});
+        die $log->fatal("Unable to get 'cpanfile' from GitHub: $response->{content}");
     }
 
     my ($fh, $fn) = tempfile();
