@@ -101,20 +101,22 @@ sub cleanup_env($self, $config, %args) {
 }
 
 sub prepare_builder_environment($self, $config) {
-    my ($have_build_essential, ) = capture_stdout {
-        system( qw( dpkg-query -W build-essential ) );
+    my $found;
+    (undef, $found) = capture_stdout {
+        system( qw( dpkg-query -W build-essential ) ) == 0;
     };
-    unless (grep { m/build-essential/ } split( /\n/, $have_build_essential )) {
+    unless ($found) {
         $config->mark_pkgs_for_cleanup( [ 'build-essential' ] );
         $self->pkg_install( [ 'build-essential' ] );
     }
 }
 
 sub prepare_installer_environment($self, $config) {
-    my ($have_make, ) = capture_stdout {
-        system( qw( dpkg-query -W make ) );
+    my $found;
+    (undef, $found) = capture_stdout {
+        system( qw( dpkg-query -W make ) ) == 0;
     };
-    unless (grep { m/make/ } split(/\n/, $have_make)) {
+    unless ($found) {
         $config->mark_pkgs_for_cleanup( [ 'make' ] );
         $self->pkg_install( [ 'make' ] );
     }
@@ -123,16 +125,17 @@ sub prepare_installer_environment($self, $config) {
 
 sub prepare_pkg_resolver_environment($self, $config) {
     my @new_pkgs;
-    my ($have_dh_make_perl, ) = capture_stdout {
-        system( qw( dpkg-query -W dh-make-perl ) );
+    my $found;
+    (undef, $found) = capture_stdout {
+        system( qw( dpkg-query -W dh-make-perl ) ) == 0;
     };
-    unless (grep { m/dh-make-perl/ } split( /\n/, $have_dh_make_perl)) {
+    unless ($found) {
         push @new_pkgs, 'dh-make-perl';
     }
-    my ($have_apt_file, ) = capture_stdout {
-        system( qw( dpkg-query -W apt-file ) );
+    (undef, $found) = capture_stdout {
+        system( qw( dpkg-query -W apt-file ) ) == 0;
     };
-    unless (grep { m/apt-file/ } split( /\n/, $have_apt_file)) {
+    unless ($found) {
         push @new_pkgs, 'apt-file';
     }
     if ($config->effective_prepare_env) {
