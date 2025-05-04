@@ -115,6 +115,31 @@ sub effective_prepare_env( $self ) {
     return 1 if $self->assume_yes;
 
     # ask and set 'prepare_env' (so uninstall_env can use it) ...
+    if (-t STDIN) {
+        while (1) {
+            my $key = '';
+            print "\nPackage installation required. Proceed? (y/N) ";
+            my $line = <STDIN>;
+            $key = substr( $line, 0, 1 );
+            if (lc($key) eq 'y') {
+                $self->prepare_env( 1 );
+                return 1;
+            }
+            elsif (lc($key) eq 'n'
+                   or $key eq "\n") {
+                $self->prepare_env( 0 );
+                return 0;
+            }
+            else {
+                say "\nInvalid input";
+            }
+        }
+    }
+    else {
+        $log->info( "Input is not a TTY; assuming answer 'no' to package installation permission" );
+        $self->prepare_env( 0 );
+        return 0;
+    }
 }
 
 sub effective_uninstall_env( $self ) {
