@@ -41,15 +41,15 @@ sub cleanup_env($self, $config, %args) {
     warn $log->fatal('generic linux support does not include package manager support');
 }
 
-sub prepare_builder_environment($self, $config) {
+sub prepare_builder_env($self, $config) {
     warn $log->warning('generic linux support does not allow creating build environment');
 }
 
-sub prepare_builder_environment($self, $config) {
+sub prepare_builder_env($self, $config) {
     warn $log->warning('generic linux support does not allow creating install environment');
 }
 
-sub prepare_pkg_resolver_environment($self, $config) {
+sub prepare_pkg_resolver_env($self, $config) {
     warn $log->warning('generic linux support does not allow creating module-to-package mapping environment');
 }
 

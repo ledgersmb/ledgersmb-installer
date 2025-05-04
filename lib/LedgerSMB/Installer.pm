@@ -361,8 +361,10 @@ sub compute($class, @args) {
                          . "; requires: " . $requirements->requirements_for_module( 'perl' ));
     }
 
-    ###TODO: prepare_pkg_resolver_environment may throw
-    $dss->prepare_pkg_resolver_environment( $config );
+    ###TODO: prepare_pkg_resolver_env may throw
+    if ($config->effective_prepare_env) {
+        $dss->prepare_pkg_resolver_env( $config );
+    }
     my $exception;
     do {
         local $@ = undef;
@@ -434,7 +436,9 @@ sub install($class, @args) {
         }
         if ($pkg_deps) {
             if ($dss->pkg_can_install()) {
-                $dss->prepare_builder_environment( $config );
+                if ($config->effective_prepare_env) {
+                    $dss->prepare_builder_env( $config );
+                }
                 goto INSTALL_SYS_PKGS;
             }
             else {
@@ -467,10 +471,14 @@ sub install($class, @args) {
     #  Need to clean up on failure after this point! We're about to change system state!
     #
     ########################################################################################
-    $dss->prepare_builder_environment( $config );
+    if ($config->effective_prepare_env) {
+        $dss->prepare_builder_env( $config );
+    }
 
     if ($dss->am_system_perl and $dss->pkg_can_install) {  # and $dss->deps_can_map
-        $dss->prepare_pkg_resolver_environment( $config );
+        if ($config->effective_prepare_env) {
+            $dss->prepare_pkg_resolver_env( $config );
+        }
         ($pkg_deps, $unmapped_mods) = $class->_compute_dep_pkgs( $dss, $config );
     }
     else {
@@ -613,7 +621,9 @@ sub install($class, @args) {
         $log->info( "Installing build dependency packages: " . join(' ', @extra_pkgs) );
         $dss->pkg_install( \@extra_pkgs );
     }
-    $dss->prepare_installer_environment( $config );
+    if ($config->effective_prepare_env) {
+        $dss->prepare_installer_env( $config );
+    }
     $class->_build_install_tree( $dss, $config, $config->installpath, $config->version );
 
     ###TODO: ideally, we pass the immediate dependencies instead of the installation path;

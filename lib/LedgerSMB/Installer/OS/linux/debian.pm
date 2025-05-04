@@ -100,7 +100,7 @@ sub cleanup_env($self, $config, %args) {
     $self->pkg_uninstall( [ $config->pkgs_for_cleanup ] );
 }
 
-sub prepare_builder_environment($self, $config) {
+sub prepare_builder_env($self, $config) {
     my ($have_build_essential, ) = capture_stdout {
         system( qw( dpkg-query -W build-essential ) );
     };
@@ -110,7 +110,7 @@ sub prepare_builder_environment($self, $config) {
     }
 }
 
-sub prepare_installer_environment($self, $config) {
+sub prepare_installer_env($self, $config) {
     my ($have_make, ) = capture_stdout {
         system( qw( dpkg-query -W make ) );
     };
@@ -118,10 +118,10 @@ sub prepare_installer_environment($self, $config) {
         $config->mark_pkgs_for_cleanup( [ 'make' ] );
         $self->pkg_install( [ 'make' ] );
     }
-    $self->SUPER::prepare_installer_environment( $config );
+    $self->SUPER::prepare_installer_env( $config );
 }
 
-sub prepare_pkg_resolver_environment($self, $config) {
+sub prepare_pkg_resolver_env($self, $config) {
     my @new_pkgs;
     my ($have_dh_make_perl, ) = capture_stdout {
         system( qw( dpkg-query -W dh-make-perl ) );

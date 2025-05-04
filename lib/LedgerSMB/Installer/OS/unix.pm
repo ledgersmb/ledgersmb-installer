@@ -29,7 +29,7 @@ sub am_system_perl($self) {
     return ($^X eq '/usr/bin/perl');
 }
 
-sub prepare_installer_environment($self, $config) {
+sub prepare_installer_env($self, $config) {
     $self->have_cmd('cpanm', 0);
     $self->have_cmd('gzip');     # fatal, used by 'tar'
     $self->have_cmd('tar');      # fatal

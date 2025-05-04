@@ -91,7 +91,7 @@ sub cleanup_env($self, $config, %args) {
     $self->pkg_uninstall( [ $config->pkgs_for_cleanup ] );
 }
 
-sub prepare_builder_environment($self, $config) {
+sub prepare_builder_env($self, $config) {
     my $dnf = $self->have_cmd( 'dnf' );
     my ($groups, ) = capture_stdout {
         system( $dnf, 'group', 'list', '--installed' );
@@ -103,7 +103,7 @@ sub prepare_builder_environment($self, $config) {
     }
 }
 
-sub prepare_installer_environment($self, $config) {
+sub prepare_installer_env($self, $config) {
     my $dnf = $self->have_cmd( 'dnf' );
     my ($make_pkgs, ) = capture_stdout {
         system( $dnf, 'repoquery', '--installed', '--queryformat', '%{name}', 'make' );
@@ -113,10 +113,10 @@ sub prepare_installer_environment($self, $config) {
         $config->mark_pkgs_for_cleanup( [ 'make' ] );
         $self->pkg_install( [ 'make' ] );
     }
-    $self->SUPER::prepare_installer_environment( $config );
+    $self->SUPER::prepare_installer_env( $config );
 }
 
-sub prepare_pkg_resolver_environment($self, $config) {
+sub prepare_pkg_resolver_env($self, $config) {
     $self->have_cmd( 'dnf',     $config->effective_compute_deps );
 }
 
