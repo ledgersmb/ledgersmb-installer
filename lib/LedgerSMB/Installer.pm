@@ -82,7 +82,7 @@ sub _get_cpanfile($class, $config) {
 
     my $response = $http->get(
         sprintf("https://raw.githubusercontent.com/ledgersmb/LedgerSMB/refs/tags/%s/cpanfile",
-               $config->version)
+               $config->effective_version)
         );
     unless ($response->{success}) {
         die $log->fatal("Unable to get 'cpanfile' from GitHub: $response->{content}");
@@ -359,7 +359,7 @@ sub compute($class, @args) {
         close( $out ) or warn $log->warn( "Unable to close output file" );
         unlink $deps_outfile;
         my $perl_version = version->parse( $] )->normal;
-        die $log->fatal( "Perl version ($perl_version) not compliant with LedgerSMB " . $config->version
+        die $log->fatal( "Perl version ($perl_version) not compliant with LedgerSMB " . $config->effective_version
                          . "; requires: " . $requirements->requirements_for_module( 'perl' ));
     }
 
@@ -464,7 +464,7 @@ sub install($class, @args) {
         # well, we might want to see if Perlbrew is installed with an acceptable version?
         #
         # and if not, we could install Perlbrew here...
-        die $log->fatal( "Not running a Perl version compliant with LedgerSMB " . $config->version );
+        die $log->fatal( "Not running a Perl version compliant with LedgerSMB " . $config->effective_version );
     }
 
 
@@ -626,7 +626,7 @@ sub install($class, @args) {
     if ($config->effective_prepare_env) {
         $dss->prepare_installer_env( $config );
     }
-    $class->_build_install_tree( $dss, $config, $config->installpath, $config->version );
+    $class->_build_install_tree( $dss, $config, $config->installpath, $config->effective_version );
 
     ###TODO: ideally, we pass the immediate dependencies instead of the installation path;
     # that allows selection of specific features in a later iteration

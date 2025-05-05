@@ -1,4 +1,4 @@
-ARG SRC=debian:buster-slim
+ARG SRC=debian:bookworm-slim
 FROM $SRC
 
 ARG VERSION=1.12.4
@@ -10,5 +10,6 @@ RUN echo -n "APT::Install-Recommends \"0\";\nAPT::Install-Suggests \"0\";\n" >> 
       perl libio-socket-ssl-perl ca-certificates
 
 COPY ledgersmb-installer /usr/bin/ledgersmb-installer
-RUN cd /srv ; ledgersmb-installer install --yes --no-verify-sig --log-level=trace --version=$VERSION
+RUN cd /srv ; ledgersmb-installer install --yes --no-verify-sig --log-level=trace
+# --version=$VERSION
 

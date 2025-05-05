@@ -3,5 +3,5 @@
 dev/build
 cp packed docker/ledgersmb-installer
 chmod +x docker/ledgersmb-installer
-docker build --progress=plain -t ledgersmb-installer ./docker/
+docker build --progress=plain -t ledgersmb-installer -f ./docker/Dockerfile.$1 ./docker/
 

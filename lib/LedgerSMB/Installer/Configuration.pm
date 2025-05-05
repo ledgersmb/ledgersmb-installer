@@ -11,6 +11,9 @@ use Symbol;
 use HTTP::Tiny;
 use Log::Any qw($log);
 
+my $http = HTTP::Tiny->new;
+
+
 sub new( $class, %args ) {
     return bless {
         # initialization options
@@ -43,7 +46,6 @@ sub have_deps($self) {
 sub retrieve_precomputed_deps($self, $name, $id) {
     return unless $name and $id;
 
-    my $http = HTTP::Tiny->new;
     my $url  = $self->dependency_url($name, $id);
 
     $log->info( "Retrieving dependency listing from $url" );
@@ -148,6 +150,34 @@ sub effective_uninstall_env( $self ) {
     }
 
     return $self->effective_prepare_env;
+}
+
+sub effective_version( $self ) {
+    return $self->version if defined $self->version;
+    $log->debug( "Resolving 'latest' version to actual version number" );
+
+    my $r = $http->get( 'https://api.github.com/repos/ledgersmb/LedgerSMB/releases/latest' );
+    if ($r->{success}) {
+        my $content = JSON::PP->new->utf8->decode( $r->{content} );
+
+        if (defined $content
+            and defined $content->{tag_name}) {
+            $self->version( $content->{tag_name} );
+            $log->info( "Resolved 'latest' version to $content->{tag_name} for installation" );
+
+            return $content->{tag_name};
+        }
+        else {
+            die $log->fatal( "Information for 'latest' release does not include tag_name" );
+        }
+        # unreachable
+    }
+    elsif ($r->{status} == 599) {
+        die $log->fatal(
+            'Error trying to retrieve precomputed dependencies: ' . $r->{content}
+            );
+    }
+    # unreachable
 }
 
 sub option_callbacks($self, $options) {
