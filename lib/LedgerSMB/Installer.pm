@@ -647,7 +647,9 @@ sub install($class, @args) {
 LedgerSMB installation into $installpath completed.
 
 The LedgerSMB server can be started using the generated
-startup script: $installpath/server-start
+startup script:
+
+ \$ $installpath/server-start
 
 The server will run with its default configuration. To change
 the configuration, copy the file doc/conf/ledgersmb.yaml to
