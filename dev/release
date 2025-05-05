@@ -17,7 +17,13 @@ then
 fi
 
 perl -pi -e 's/^package ([^ ;]+)( v\d+\.\d+\.\d+)?;/package $1 '"$version"';/' $(find lib -name '*.pm')
+git commit -am "Update version"
+git tag $version
 
+perl -Mversion -pi -e 'my $v = version->parse(version->parse("'"$version"'")->numify + version->parse("v0.0.1")->numify)->normal; s/^package ([^ ;]+)( v\d+\.\d+\.\d+)?;/package $1 $v;/' $(find lib -name '*.pm')
+git commit -am "Post-release version update"
+
+git checkout $version
 # update MANIFEST
 (git ls-files | grep -v '^\.' | grep -vE '^(dev|docker)/' ; echo "MANIFEST" ) | sort > MANIFEST
 
