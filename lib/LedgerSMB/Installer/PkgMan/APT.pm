@@ -1,4 +1,4 @@
-package LedgerSMB::Installer::PkgMan::APT;
+package LedgerSMB::Installer::PkgMan::APT v0.999.0;
 
 use v5.20;
 use experimental qw(signatures);
