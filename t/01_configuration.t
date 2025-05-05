@@ -97,8 +97,9 @@ $get_result = {
 };
 
 ok lives {
-    is( $c->retrieve_precomputed_deps( 'debian', 'bookworm' ),
-        [ qw( a b c ) ],
+    my @computed = $c->retrieve_precomputed_deps( 'debian', 'bookworm' );
+    is( \@computed,
+        [ [ qw(a b c) ], [ qw( d e f ) ] ],
         q{Retrieval of existing precomputed dependencies} );
 }, q{Precomputed dependency retrieval runs without exceptions};
 
