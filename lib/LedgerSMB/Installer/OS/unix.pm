@@ -94,4 +94,27 @@ sub untar($self, $tar, $target, %options) {
         or croak $log->fatal( "Failure executing tar: $!" );
 }
 
+sub generate_start_script($self, $installpath, $locallib) {
+    ###TODO: capture file open error
+    my $script = File::Spec->catfile( $installpath, 'server-start' );
+    open( my $fh, '>', $script );
+    my $starman = $self->have_cmd( 'starman', 0, [ File::Spec->catdir( $locallib, 'bin' ) ] );
+    my $locallib_lib = File::Spec->catdir( $locallib, 'lib' );
+
+    say $fh <<~EOF;
+      #!/bin/bash
+
+      cd $installpath
+      exec $^X \\
+          -I lib \\
+          -I $locallib_lib \\
+          $starman \\
+          --listen 0.0.0.0:5762 \\
+          --workers \${LSMB_WORKERS:-5} \\
+          --preload-app bin/ledgersmb-server.psgi
+      EOF
+    ###TODO: capture mode change error
+    chmod( 0755, $script );
+}
+
 1;

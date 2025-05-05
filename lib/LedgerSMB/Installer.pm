@@ -631,9 +631,32 @@ sub install($class, @args) {
     $dss->cpanm_install( $config->installpath, $config->locallib, $unmapped_mods );
     $rv = 0;
 
+    $log->info( "Generating application server startup script (server-start)" );
+    $dss->generate_start_script( $config->installpath, $config->locallib );
+
   CLEANUP:
     $log->warning( "Cleaning up Perl module installation dependencies" );
     $dss->cleanup_env($config);
+
+    if ($rv) {
+        say "Failed to complete server installation.";
+    }
+    else {
+        my $installpath = $config->installpath;
+        say "
+LedgerSMB installation into $installpath completed.
+
+The LedgerSMB server can be started using the generated
+startup script: $installpath/server-start
+
+The server will run with its default configuration. To change
+the configuration, copy the file doc/conf/ledgersmb.yaml to
+$installpath and modify it. After modification, restart the
+LedgerSMB server to activate the new configuration.
+
+";
+    }
+
     return $rv;
 }
 

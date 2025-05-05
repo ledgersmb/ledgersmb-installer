@@ -64,7 +64,7 @@ sub pg_config_extra_paths($self) {
     return ();
 }
 
-sub pkgn_from_modules($self, $mod) {
+sub pkgs_from_modules($self, $mod) {
     die 'Operating system and distribution support needs to override the "pkgs_from_modules" method';
 }
 
