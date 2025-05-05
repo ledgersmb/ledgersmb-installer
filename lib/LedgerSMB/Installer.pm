@@ -23,6 +23,8 @@ use Module::CPANfile;
 
 use LedgerSMB::Installer::Configuration;
 
+my $INSTALLER_VERSION = 'version CLONED'; # not intended to be the module version
+
 my $http = HTTP::Tiny->new( agent => 'LedgerSMB-Installer/0.1' );
 my $json = JSON::PP->new->canonical;
 
@@ -675,7 +677,9 @@ sub run($class, $cmd, @args) {
         unshift @args, $cmd;
         $cmd = 'install';
     }
-    elsif ($cmd eq 'compute') {
+
+    if ($cmd eq 'compute') {
+        say $log->info( "Computing dependencies using installer version $INSTALLER_VERSION" );
         return $class->compute( @args );
     }
     elsif ($cmd eq 'download') {
@@ -685,6 +689,7 @@ sub run($class, $cmd, @args) {
         return $class->help( @args );
     }
     elsif ($cmd eq 'install') {
+        say $log->info( "Installing LedgerSMB using $INSTALLER_VERSION" );
         return $class->install( @args );
     }
     elsif ($cmd eq 'system-id') {
