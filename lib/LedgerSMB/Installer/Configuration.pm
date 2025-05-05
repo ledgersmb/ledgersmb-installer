@@ -189,7 +189,6 @@ sub option_callbacks($self, $options) {
         'local-lib=s'        => sub { $self->locallib( $_[1] ) },
         'log-level=s'        => sub { $self->loglevel( $_[1] ) },
         'verify-sig!'        => sub { $self->verify_sig( $_[1] ) },
-        'version=s'          => sub { $self->version( $_[1] ) },
         );
 
     return %opts{$options->@*};

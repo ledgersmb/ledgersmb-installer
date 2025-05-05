@@ -334,9 +334,12 @@ sub _load_dist_support($class) {
 sub compute($class, @args) {
     my ($dss, $config) = $class->_boot(
         \@args,
-        [ 'yes|y!', 'target=s', 'local-lib=s', 'log-level=s', 'version=s' ]
+        [ 'yes|y!', 'target=s', 'local-lib=s', 'log-level=s' ]
         );
+    my $version = shift @args;
+
     $config->compute_deps( 1 );
+    $config->version( $version ) if defined $version;
 
     if (@args != 1) {
         die "Incorrect number of arguments";
@@ -425,8 +428,10 @@ sub install($class, @args) {
     my ($dss, $config) = $class->_boot(
         \@args,
         [ 'yes|y!', 'system-packages!', 'prepare-env!', 'target=s',
-          'local-lib=s', 'log-level=s', 'verify-sig!', 'version=s' ]
+          'local-lib=s', 'log-level=s', 'verify-sig!' ]
         );
+    my $version = shift @args;
+    $config->version( $version ) if defined $version;
 
     my ($pkg_deps, $unmapped_mods);
     my @extra_pkgs;

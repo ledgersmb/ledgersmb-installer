@@ -5,4 +5,4 @@ ARG VERSION=1.9.30
 RUN zypper refresh && zypper install -y perl perl-IO-Socket-SSL patterns-devel-base-devel_basis libpq5 postgresql-devel postgresql17-server-devel libxml2-2 libxml2-devel texlive-latex texlive-plain libgmp10 gmp-devel libexpat1 libexpat-devel
 
 COPY ledgersmb-installer /usr/bin/ledgersmb-installer
-RUN cd /srv ; ledgersmb-installer install --yes --no-verify-sig --log-level=trace --version=$VERSION
+RUN cd /srv ; ledgersmb-installer install --yes --no-verify-sig --log-level=trace $VERSION
