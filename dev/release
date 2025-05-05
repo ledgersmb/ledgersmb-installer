@@ -1,0 +1,30 @@
+#!/bin/bash
+
+version=$1
+shift
+
+if [ -z "$version" ]
+then
+  echo -e "Error: no version specified\n\nusage: release <version>\n"
+  exit 1
+fi
+
+modified_files="$(git status --short | grep -v ^\?\?)"
+if [ -n "$modified_files" ]
+then
+  echo -e "Error: repository not clean\n\nStash changes before starting the release process\n"
+  exit 2
+fi
+
+perl -pi -e 's/^package ([^ ;]+)( v\d+\.\d+\.\d+)?;/package $1 '"$version"';/' $(find lib -name '*.pm')
+
+# update MANIFEST
+(git ls-files | grep -v '^\.' | grep -vE '^(dev|docker)/' ; echo "MANIFEST" ) | sort > MANIFEST
+
+# update Makefile
+perl ./Makefile.PL
+
+make test
+
+make dist
+
