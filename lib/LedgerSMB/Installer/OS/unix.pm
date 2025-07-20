@@ -89,6 +89,8 @@ sub untar($self, $tar, $target, %options) {
     my @cmd = ($self->{cmd}->{tar}, 'xzf', $tar, '-C', $target);
     push @cmd, ('--strip-components', $options{strip_components})
         if $options{strip_components};
+    push @cmd, '--no-same-owner'
+        if $options{no_same_owner};
     $log->debug( 'system(): ' . join(' ', map { "'$_'" } @cmd ) );
     system(@cmd) == 0
         or croak $log->fatal( "Failure executing tar: $!" );

@@ -67,6 +67,7 @@ sub _build_install_tree($class, $dss, $config, $installpath, $version) {
     $log->info( "Extracting release tarball" );
     $dss->untar( File::Spec->catfile( $installpath, $archive),
                  $installpath,
+                 no_same_owner => 1,
                  strip_components => 1 );
     $config->cpanfile( File::Spec->catfile( $installpath, 'cpanfile' ) );
 

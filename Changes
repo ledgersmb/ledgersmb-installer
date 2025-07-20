@@ -1,5 +1,9 @@
 ---
 
+2025-07-20   0.999.2
+   [Fixed]
+       * Don't use tarball owner and group when running as root
+
 2025-05-07   0.999.1
    [Fixed]
        * Tests were testing the --version option argument
