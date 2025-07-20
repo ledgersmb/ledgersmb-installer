@@ -30,7 +30,10 @@ sub have_cmd($self, $cmd, $fatal = 1, $extra_path = []) {
             $executable = $cmd if -x $cmd;
         }
         else {
-            for my $path (File::Spec->path, $extra_path->@*) {
+            # Prefer specific added paths over system path; we may have
+            # installed something specific; if we did, we don't want to
+            # find the system global thing in its place.
+            for my $path ($extra_path->@*, File::Spec->path) {
                 my $expanded = File::Spec->catfile( $path, $cmd );
                 next if not -x $expanded;
 
