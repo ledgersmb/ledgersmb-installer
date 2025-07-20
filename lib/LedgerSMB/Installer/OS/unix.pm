@@ -104,12 +104,12 @@ sub generate_start_script($self, $installpath, $locallib) {
     my $locallib_lib = File::Spec->catdir( $locallib, 'lib', 'perl5' );
 
     say $fh <<~EOF;
-      #!/bin/bash
+      #!/usr/bin/bash
 
       cd $installpath
       exec $^X \\
-          -I lib \\
-          -I $locallib_lib \\
+          -I $installpath/lib \\
+          -I $installpath/$locallib_lib \\
           $starman \\
           --listen 0.0.0.0:5762 \\
           --workers \${LSMB_WORKERS:-5} \\
