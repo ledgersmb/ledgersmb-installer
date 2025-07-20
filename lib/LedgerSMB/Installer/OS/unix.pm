@@ -101,7 +101,7 @@ sub generate_start_script($self, $installpath, $locallib) {
     my $script = File::Spec->catfile( $installpath, 'server-start' );
     open( my $fh, '>', $script );
     my $starman = $self->have_cmd( 'starman', 0, [ File::Spec->catdir( $locallib, 'bin' ) ] );
-    my $locallib_lib = File::Spec->catdir( $locallib, 'lib' );
+    my $locallib_lib = File::Spec->catdir( $locallib, 'lib', 'perl5' );
 
     say $fh <<~EOF;
       #!/bin/bash
