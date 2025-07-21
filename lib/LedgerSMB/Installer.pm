@@ -120,7 +120,8 @@ sub _compute_immediate_deps($class, $config) {
     my @mods = sort { lc($a) cmp lc($b) } $effective->required_modules;
 
     $log->debug( "Direct dependency count: " . scalar(@mods) );
-    return @mods;
+    $log->trace( "- $_" ) for (sort @mods);
+    return sort @mods;
 }
 
 sub _compute_all_deps($class, $config) {
