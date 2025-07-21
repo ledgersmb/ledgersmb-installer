@@ -698,7 +698,7 @@ sub run($class, $cmd, @args) {
         return $class->help( @args );
     }
     elsif ($cmd eq 'install') {
-        say $log->info( "Installing LedgerSMB using $INSTALLER_VERSION" );
+        say $log->info( "Installing LedgerSMB using installer version $INSTALLER_VERSION" );
         return $class->install( @args );
     }
     elsif ($cmd eq 'system-id') {
