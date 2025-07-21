@@ -81,12 +81,13 @@ sub _build_install_tree($class, $dss, $config, $installpath, $version) {
 sub _get_cpanfile($class, $config) {
     return $config->cpanfile if $config->cpanfile;
 
-    my $response = $http->get(
+    my $url =
         sprintf("https://raw.githubusercontent.com/ledgersmb/LedgerSMB/refs/tags/%s/cpanfile",
-               $config->effective_version)
-        );
+                $config->effective_version);
+
+    my $response = $http->get( $url );
     unless ($response->{success}) {
-        die $log->fatal("Unable to get 'cpanfile' from GitHub: $response->{content}");
+        die $log->fatal("Unable to get '$url' from GitHub: $response->{content}");
     }
 
     my ($fh, $fn) = tempfile();
