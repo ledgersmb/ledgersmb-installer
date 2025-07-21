@@ -127,6 +127,7 @@ sub _compute_immediate_deps($class, $config) {
 sub _compute_all_deps($class, $config) {
     my @deps = $class->_compute_immediate_deps( $config );
 
+    my @orig_deps = (@deps, );
     my @last_deps = @deps;
     my %dists;
     my $iteration = 1;
@@ -182,9 +183,17 @@ sub _compute_all_deps($class, $config) {
         $iteration++;
     } while (@last_deps);
 
-    @deps = uniq @deps;
+    my @missed = do {
+        my %deps = map { $_ => 1 } @deps;
+        grep { !$deps{$_} } @orig_deps;
+    };
+    $log->error( "Unable to resolve dependencies for modules: "
+                 . join(', ', @missed) )
+        if (@missed);
+    @deps = sort uniq (@deps, @missed);
     $log->debug( "Dependency tree size: " . scalar(@deps) );
-    return uniq @deps;
+    $log->trace( "- $_" ) for (@deps);
+    return @deps;
 }
 
 sub _compute_dep_pkgs($class, $dss, $config ) {
