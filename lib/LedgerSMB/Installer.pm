@@ -697,7 +697,7 @@ sub run($class, $cmd, @args) {
     }
 
     if ($cmd eq 'compute') {
-        say $log->info( "Computing dependencies using installer version $INSTALLER_VERSION" );
+        say $log->info( "Computing dependencies using installer $INSTALLER_VERSION" );
         return $class->compute( @args );
     }
     elsif ($cmd eq 'download') {
@@ -707,7 +707,7 @@ sub run($class, $cmd, @args) {
         return $class->help( @args );
     }
     elsif ($cmd eq 'install') {
-        say $log->info( "Installing LedgerSMB using installer version $INSTALLER_VERSION" );
+        say $log->info( "Installing LedgerSMB using installer $INSTALLER_VERSION" );
         return $class->install( @args );
     }
     elsif ($cmd eq 'system-id') {
