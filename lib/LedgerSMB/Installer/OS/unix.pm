@@ -109,7 +109,8 @@ sub generate_start_script($self, $installpath, $locallib) {
       cd $installpath
       exec $^X \\
           -I $installpath/lib \\
-          -I $installpath/$locallib_lib \\
+          -I $installpath/old/lib \\
+          -I $locallib_lib \\
           $starman \\
           --listen 0.0.0.0:5762 \\
           --workers \${LSMB_WORKERS:-5} \\

@@ -640,7 +640,8 @@ sub install($class, @args) {
     $rv = 0;
 
     $log->info( "Generating application server startup script (server-start)" );
-    $dss->generate_start_script( $config->installpath, $config->locallib );
+    $dss->generate_start_script( File::Spec->rel2abs( $config->installpath ),
+                                 File::Spec->rel2abs( $config->locallib ) );
 
   CLEANUP:
     $log->warning( "Cleaning up Perl module installation dependencies" );
