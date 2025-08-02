@@ -45,7 +45,7 @@ sub prepare_builder_env($self, $config) {
     warn $log->warning('generic linux support does not allow creating build environment');
 }
 
-sub prepare_builder_env($self, $config) {
+sub prepare_installer_env($self, $config) {
     warn $log->warning('generic linux support does not allow creating install environment');
 }
 
