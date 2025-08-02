@@ -125,6 +125,24 @@ sub prepare_builder_env($self, $config) {
     }
 }
 
+sub prepare_extraction_env($self, $config) {
+    my ($have_deps, ) = capture_stdout {
+        system( qw( dpkg-query -W tar gzip ) );
+    };
+    my @pkgs;
+    unless (grep { m/tar/ } split(/\n/, $have_deps)) {
+        push @pkgs, 'tar';
+    }
+    unless (grep { m/gzip/ } split(/\n/, $have_deps)) {
+        push @pkgs, 'gzip';
+    }
+    if (@pkgs) {
+        $config->mark_pkgs_for_cleanup( \@pkgs );
+        $self->pkg_install( \@pkgs );
+    }
+    $self->SUPER::prepare_extraction_env( $config );
+}
+
 sub prepare_installer_env($self, $config) {
     my ($have_make, ) = capture_stdout {
         system( qw( dpkg-query -W make ) );
