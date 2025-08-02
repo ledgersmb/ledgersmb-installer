@@ -480,9 +480,15 @@ sub install($class, @args) {
         }
     }
 
+    ########################################################################################
+    #
+    #  Need to clean up on failure after this point! We have changed system state!
+    #
+    ########################################################################################
+    $dss->prepare_extraction_env( $config );
+    $class->_build_install_tree( $dss, $config, $config->installpath, $config->effective_version );
     my $prereqs = $class->_get_immediate_prereqs( $config );
     my $requirements = $prereqs->merged_requirements();
-
 
     unless  ($requirements->accepts_module( 'perl', $])) {
         # BAIL: No suitable Perl here...
@@ -493,12 +499,6 @@ sub install($class, @args) {
         die $log->fatal( "Not running a Perl version compliant with LedgerSMB " . $config->effective_version );
     }
 
-
-    ########################################################################################
-    #
-    #  Need to clean up on failure after this point! We're about to change system state!
-    #
-    ########################################################################################
     if ($config->effective_prepare_env) {
         $dss->prepare_builder_env( $config );
     }
@@ -652,7 +652,6 @@ sub install($class, @args) {
     if ($config->effective_prepare_env) {
         $dss->prepare_installer_env( $config );
     }
-    $class->_build_install_tree( $dss, $config, $config->installpath, $config->effective_version );
 
     ###TODO: ideally, we pass the immediate dependencies instead of the installation path;
     # that allows selection of specific features in a later iteration
