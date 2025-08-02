@@ -29,6 +29,10 @@ sub am_system_perl($self) {
     return ($^X eq '/usr/bin/perl');
 }
 
+sub prepare_builder_env($self, $config) {
+    warn $log->warning( 'generic Unix/Linux support does not install required module build tools' );
+}
+
 sub prepare_extraction_env($self, $config) {
     $self->have_cmd('gzip');     # fatal, used by 'tar'
     $self->have_cmd('tar');      # fatal
