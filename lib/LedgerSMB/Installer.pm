@@ -227,10 +227,10 @@ sub _download($class, $installpath, $version) {
             });
 
         if ($r->{status} == 599) {
-            croak $log->fatal( "Unable to request $url/$fn: " . $r->{content} );
+            croak $log->fatal( "Unable to request $url$fn: " . $r->{content} );
         }
         elsif (not $r->{success}) {
-            croak $log->fatal( "Unable to request $url/$fn: $r->{status} - $r->{reason}" );
+            croak $log->fatal( "Unable to request $url$fn: $r->{status} - $r->{reason}" );
         }
     };
 
