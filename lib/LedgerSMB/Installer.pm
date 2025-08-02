@@ -69,7 +69,7 @@ sub _build_install_tree($class, $dss, $config, $installpath, $version) {
                  $installpath,
                  no_same_owner => 1,
                  strip_components => 1 );
-    $config->cpanfile( File::Spec->catfile( $installpath, 'cpanfile' ) );
+    $config->cpanfile_path( File::Spec->catfile( $installpath, 'cpanfile' ) );
 
     $log->info( "Removing extracted release tarball" );
     remove_tree(               # croaks on fatal errors
@@ -81,20 +81,27 @@ sub _build_install_tree($class, $dss, $config, $installpath, $version) {
 sub _get_cpanfile($class, $config) {
     return $config->cpanfile if $config->cpanfile;
 
-    my $url =
-        sprintf("https://raw.githubusercontent.com/ledgersmb/LedgerSMB/refs/tags/%s/cpanfile",
-                $config->effective_version);
+    my $cpanfile;
+    if ($config->cpanfile_path) {
+        $cpanfile = $config->cpanfile_path;
+    }
+    else {
+        my $url =
+            sprintf("https://raw.githubusercontent.com/ledgersmb/LedgerSMB/refs/tags/%s/cpanfile",
+                    $config->effective_version);
 
-    my $response = $http->get( $url );
-    unless ($response->{success}) {
-        die $log->fatal("Unable to get '$url' from GitHub: $response->{content}");
+        my $response = $http->get( $url );
+        unless ($response->{success}) {
+            die $log->fatal("Unable to get '$url' from GitHub: $response->{content}");
+        }
+
+        my ($fh, $fn) = tempfile();
+        print $fh $response->{content};
+        $fh->flush;
+        $cpanfile = $fn;
     }
 
-    my ($fh, $fn) = tempfile();
-    print $fh $response->{content};
-    $fh->flush;
-
-    my $decl = Module::CPANfile->load( $fn );
+    my $decl = Module::CPANfile->load( $cpanfile );
     $config->cpanfile( $decl );
 
     return $decl;

@@ -196,7 +196,7 @@ sub option_callbacks($self, $options) {
 
 for my $acc (qw( assume_yes installpath locallib loglevel
                  compute_deps prepare_env sys_pkgs
-                 verify_sig uninstall_env version cpanfile )) {
+                 verify_sig uninstall_env version cpanfile cpanfile_path )) {
     my $ref = qualify_to_ref $acc;
     *{$ref} = sub($self, $arg = undef) {
         $self->{"_$acc"} = $arg
