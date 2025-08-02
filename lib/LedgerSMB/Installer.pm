@@ -668,6 +668,11 @@ sub install($class, @args) {
     $dss->cleanup_env($config);
 
     if ($rv) {
+        if (-e $config->installpath) {
+            $log->warning( "Cleaning up installation path" );
+            remove_tree $config->installpath;
+        }
+
         say "Failed to complete server installation.";
     }
     else {
