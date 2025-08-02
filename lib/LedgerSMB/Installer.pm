@@ -54,8 +54,10 @@ sub _boot($class, $args, $options) {
 sub _build_install_tree($class, $dss, $config, $installpath, $version) {
     my $archive = "ledgersmb-$version.tar.gz";
 
-    $log->info( "Creating installation path $installpath" );
-    make_path( $installpath ); # croaks on fatal errors
+    if (not -d $installpath ) {
+        $log->info( "Creating installation path $installpath" );
+        make_path( $installpath ); # croaks on fatal errors
+    }
 
     $log->info( "Downloading release tarball $archive" );
     $class->_download( $installpath, $version );
