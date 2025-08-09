@@ -127,6 +127,8 @@ sub verify_sig($self, $installpath, $tar, $sig, $key) {
         or croak $log->fatal( "Failure to verify gpg signature: $!" );
 
     remove_tree( $tempdir );
+
+    $log->info( 'gpg signature validated correctly' );
 }
 
 sub generate_start_script($self, $installpath, $locallib) {
