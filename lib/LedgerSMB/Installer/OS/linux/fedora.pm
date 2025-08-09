@@ -120,6 +120,15 @@ sub prepare_extraction_env($self, $config) {
     unless ($have_gzip) {
         push @pkgs, 'gzip';
     }
+    if ($config->verify_sig) {
+        my ($gnupg2_pkgs, ) = capture_stdout {
+            system( $dnf, 'repoquery', '--installed', '--queryformat', '%{name}', 'gnupg2' );
+        };
+        my $have_gnupg2 = ($gnupg2_pkgs =~ m/^gnupg2/m);
+        unless ($have_gnupg2) {
+            push @pkgs, 'gnupg2';
+        }
+    }
     if (@pkgs) {
         $config->mark_pkgs_for_cleanup( \@pkgs );
         $self->pkg_install( \@pkgs );
