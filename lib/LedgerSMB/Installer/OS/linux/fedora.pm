@@ -110,7 +110,7 @@ sub prepare_extraction_env($self, $config) {
         system( $dnf, 'repoquery', '--installed', '--queryformat', '%{name}', 'tar' );
     };
     my $have_tar = ($tar_pkgs =~ m/^tar/m);
-    unless ($have_make) {
+    unless ($have_tar) {
         push @pkgs, 'tar';
     }
     my ($gzip_pkgs, ) = capture_stdout {
