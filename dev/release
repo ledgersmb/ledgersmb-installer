@@ -11,7 +11,7 @@ then
   exit 1
 fi
 
-modified_files="$(git status --short | grep -qv ^\?\?)"
+modified_files="$(git status --short | grep -v ^\?\? || [[ $? == 1 ]])"
 if [ -n "$modified_files" ]
 then
   echo -e "Error: repository not clean\n\nStash changes before starting the release process\n"
