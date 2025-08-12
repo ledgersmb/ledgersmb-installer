@@ -688,6 +688,10 @@ sub install($class, @args) {
 
     ###TODO: ideally, we pass the immediate dependencies instead of the installation path;
     # that allows selection of specific features in a later iteration
+    #
+    # Installs dependencies from cpanfile (because it respects dependency versions,
+    # which the simple list of dependencies does not); then installs the extra
+    # dependencies which were not satisfied from the list of unmapped_mods)
     $dss->cpanm_install( $config->installpath, $config->locallib, $unmapped_mods );
     $rv = 0;
 

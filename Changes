@@ -5,6 +5,8 @@
        * Install more LaTeX dependency packages on Debian and Federa
    [Fixed]
        * Install LaTeX dependencies, even when LaTeX::Driver is installed
+       * Take version requirement ranges into account when installing from
+         CPAN based on 'cpanfile'
 
 0.999.9      2025-08-10
    [Fixed]
