@@ -1,5 +1,11 @@
 ---
 
+0.999.10    TO BE RELEASED
+   [Changed]
+       * Install more LaTeX dependency packages on Debian and Federa
+   [Fixed]
+       * Install LaTeX dependencies, even when LaTeX::Driver is installed
+
 0.999.9      2025-08-10
    [Fixed]
        * 'gpg' invocation for signature validation

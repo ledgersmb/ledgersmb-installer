@@ -588,10 +588,6 @@ sub install($class, @args) {
             if (not $dss->pkg_can_install) {
                 die $log->fatal( "Missing 'latex' executable required for building 'LaTeX::Driver' module" );
             }
-
-            my ($run_deps, $build_deps) = $dss->pkg_deps_latex;
-            $config->mark_pkgs_for_cleanup( $build_deps );
-            push @extra_pkgs, $run_deps->@*, $build_deps->@*;
         }
     }
     elsif (eval { require LaTeX::Driver; 1; }) {
@@ -602,6 +598,16 @@ sub install($class, @args) {
     }
     else {
         $log->fatal( "Internal error: LaTeX::Driver not available and won't be installed, but build prereqs not checked?!?!" );
+    }
+    if ($dss->pkg_can_install) {
+        # installs LaTeX *and* styles required for standard templates
+        my ($run_deps, $build_deps) = $dss->pkg_deps_latex;
+        $config->mark_pkgs_for_cleanup( $build_deps );
+        push @extra_pkgs, $run_deps->@*, $build_deps->@*;
+    }
+    else {
+        ###TODO: figure out how to warn the user of minimal required
+        # styles configuration...
     }
 
     $log->info( "Checking for availability of XML::Parser" );

@@ -201,7 +201,7 @@ sub _rm_installed($pkgs) {
 
 sub pkg_deps_latex($self) {
     return (_rm_installed([ qw(texlive-latex-recommended texlive-fonts-recommended
-                 texlive-plain-generic texlive-xetex) ]),
+                               texlive-plain-generic texlive-xetex texlive-latex-extra) ]),
             []);
 }
 

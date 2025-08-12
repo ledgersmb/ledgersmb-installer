@@ -167,7 +167,10 @@ sub _rm_installed($self, $pkgs) {
 }
 
 sub pkg_deps_latex($self) {
-    return ($self->_rm_installed([ qw(texlive-latex texlive-plain texlive-xetex) ]),
+    return ($self->_rm_installed([ qw(texlive-latex texlive-plain texlive-xetex
+                                      texlive-collection-basic
+                                      texlive-collection-latexextra
+                                      texlive-collection-fontsrecommended) ]),
             []);
 }
 
