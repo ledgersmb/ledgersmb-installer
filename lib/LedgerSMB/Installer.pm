@@ -169,13 +169,17 @@ sub _compute_all_deps($class, $config) {
     my $iteration = 1;
     do {
         my $query = {
-            query => { match_all => {} },
             _source => [ qw( release distribution status provides ), 'dependency.*' ],
-            filter => {
-                and => [
-                    { term => { status => 'latest' } },
-                    { terms => { provides => [ @last_deps ] } }
-                    ]
+            query => {
+                bool => {
+                    must => [
+                        { term => { status => 'latest' } },
+                        { terms => { provides => [ @last_deps ] } }
+                        ],
+                    filter => {
+                        match_all => {}
+                    }
+                }
             }
         };
 
