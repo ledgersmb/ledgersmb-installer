@@ -166,7 +166,7 @@ sub generate_start_script($self, $installpath, $locallib) {
           -I $installpath/old/lib \\
           -I $locallib_lib \\
           $starman \\
-          --listen 0.0.0.0:5762 \\
+          --listen \${LSMB_BIND_ADDRESS:-0.0.0.0:5762} \\
           --workers \${LSMB_WORKERS:-5} \\
           --preload-app bin/ledgersmb-server.psgi
       EOF
