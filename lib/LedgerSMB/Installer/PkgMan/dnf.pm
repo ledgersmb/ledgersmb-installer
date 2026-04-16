@@ -1,4 +1,4 @@
-package LedgerSMB::Installer::PkgMan::dnf v0.999.12;
+package LedgerSMB::Installer::PkgMan::dnf v0.999.13;
 
 use strict;
 use warnings;
