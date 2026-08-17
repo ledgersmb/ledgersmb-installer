@@ -1,6 +1,11 @@
 ---
 
 0.999.13    2026-08-17
+   [Added]
+       * Resolution of dependent executables looks in the Perl executable
+         directory ($Config{bin}) before consulting the system $PATH to
+         resolve specifically installed dependencies to the correct
+         versions
    [Fixed]
        * Error handling on HTTP(S) request failure against MetaCPAN API
          while resolving the dependency tree
