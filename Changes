@@ -2,6 +2,8 @@
 
 0.999.13    2026-08-17
    [Added]
+       * Support for installation on RHEL and derivatives; RHEL uses
+         different package and package group names than Fedora
        * Resolution of dependent executables looks in the Perl executable
          directory ($Config{bin}) before consulting the system $PATH to
          resolve specifically installed dependencies to the correct

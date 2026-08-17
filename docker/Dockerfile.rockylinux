@@ -1,0 +1,8 @@
+FROM rockylinux/rockylinux:10
+
+ARG VERSION=1.12.4
+
+RUN dnf install -q -y perl
+
+COPY ledgersmb-installer /usr/bin/ledgersmb-installer
+RUN cd /srv ; ledgersmb-installer install --yes --log-level=trace $VERSION
