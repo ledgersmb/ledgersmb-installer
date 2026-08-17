@@ -1,5 +1,9 @@
 ---
 
+0.999.14   To be released
+   [Fixed]
+       * POD error complaining of non-ascii input
+
 0.999.13    2026-08-17
    [Added]
        * Support for installation on RHEL and derivatives; RHEL uses
