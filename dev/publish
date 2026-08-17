@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 scp packed lsmb-uploader@get.ledgersmb.org:/www/vhosts/get.ledgersmb.org/public_html/lsmb-installer
 scp packed lsmb-uploader@get.ledgersmb.org:/www/vhosts/get.ledgersmb.org/public_html/ledgersmb-installer
