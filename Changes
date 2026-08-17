@@ -9,6 +9,9 @@
    [Fixed]
        * Error handling on HTTP(S) request failure against MetaCPAN API
          while resolving the dependency tree
+       * On RedHat Linux 9 (RHEL9) and derivatives, execute the fallback
+         codepath because 'dnf5' is not available (instead of throwing
+         an error)
 
 0.999.12    2026-04-16
    [Added]
