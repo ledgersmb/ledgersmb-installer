@@ -484,6 +484,35 @@ sub _module_will_install($class, $mod, $pkgs, $unmapped) {
     return 1;
 }
 
+sub available($class, @args) {
+    my $r = $http->get( 'https://download.ledgersmb.org/f/Releases/' );
+    unless ($r->{success}) {
+        die $log->error( "Failed to retrieve download list; $r->{code} - $r->{reason}" );
+    }
+
+    my @versions;
+    while ($r->{content} =~ s{<tr\s+class="(?:odd|even)"\s*>(.*?)</tr\s*>}{}m) {
+        my $row = $1;
+        if ($row =~ m{">(\d+\.\d+\.\d+)/</a>}) {
+            my $version = $1;
+            $version =~ m{(\d+\.\d+)\.};
+            my $minor = $1;
+            push @versions, {
+                version => version->parse($version),
+                minor   => $minor
+            };
+        }
+    }
+
+    my $last_minor = '';
+    for my $v (sort { $b->{version} <=> $a->{version} } @versions) {
+        next if $last_minor eq $v->{minor};
+
+        say ' ' . $v->{version}->stringify;
+        $last_minor = $v->{minor};
+    }
+}
+
 sub install($class, @args) {
     my $rv = 1;
     my ($dss, $config) = $class->_boot(
@@ -769,6 +798,10 @@ sub run($class, $cmd, @args) {
     elsif ($cmd eq 'help') {
         return $class->help( @args );
     }
+    elsif ($cmd eq 'available') {
+        say $log->info( "Retrieving list of available versions for installation" );
+        return $class->available( @args );
+    }
     elsif ($cmd eq 'install') {
         say $log->info( "Installing LedgerSMB using installer $INSTALLER_VERSION" );
         return $class->install( @args );
@@ -830,6 +863,7 @@ Usage: SCRIPT [command] [option ..]
   Commands:
     compute
     download
+    available
     install
     help
     system-id
