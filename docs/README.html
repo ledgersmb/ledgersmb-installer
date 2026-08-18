@@ -228,19 +228,21 @@
 
     <p>The installer supports these environment variables to change its behaviour:</p>
 
-    <dt><code>ARTIFACT_LOCATION</code></dt>
-    <dd>The URL pointing to the path where the release tarball can be downloaded; that is, if the
-      release can be downloaded from
-      <code class="block">https://download.ledgersmb.org/f/Releases/1.14.0/ledgersmb-1.14.0.tar.gz</code>
-      then the artifact location is:
-      <code class="block">https://download.ledgersmb.org/f/Releases/1.14.0/</code>
-    </dd>
+    <dl>
+      <dt><code>ARTIFACT_LOCATION</code></dt>
+      <dd>The URL pointing to the path where the release tarball can be downloaded; that is, if the
+        release can be downloaded from
+        <code class="block">https://download.ledgersmb.org/f/Releases/1.14.0/ledgersmb-1.14.0.tar.gz</code>
+        then the artifact location is:
+        <code class="block">https://download.ledgersmb.org/f/Releases/1.14.0/</code>
+      </dd>
 
-    <dt><code>HTTP_PROXY</code>, <code>HTTPS_PROXY</code>, <code>ALL_PROXY</code></dt>
-    <dd>These environment variables exist for proxy support. Please consult the
-      <a href="https://metacpan.org/pod/HTTP::Tiny#PROXY-SUPPORT">HTTP::Tiny
-        documentation</a> for more explanation.
-    </dd>
+      <dt><code>HTTP_PROXY</code>, <code>HTTPS_PROXY</code>, <code>ALL_PROXY</code></dt>
+      <dd>These environment variables exist for proxy support. Please consult the
+        <a href="https://metacpan.org/pod/HTTP::Tiny#PROXY-SUPPORT">HTTP::Tiny
+          documentation</a> for more explanation.
+      </dd>
+    </dl>
 
     <h2 id="bugs">Bugs and general discussion</h2>
     <p>The project is hosted on GitHub, as part of the <a href="https://github.com/ledgersmb">
