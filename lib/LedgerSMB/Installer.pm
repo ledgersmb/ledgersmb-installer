@@ -254,7 +254,12 @@ sub _compute_dep_pkgs($class, $dss, $config ) {
 
 sub _download($class, $installpath, $version) {
     my $fn   = "ledgersmb-$version.tar.gz";
-    my $url  = $ENV{ARTIFACT_LOCATION} // "https://download.ledgersmb.org/f/Releases/$version/";
+    my $url  =
+        $ENV{ARTIFACT_LOCATION} // (
+            ($version =~ m/\d+\.\d+\.\d+\-/)
+            ? "https://download.ledgersmb.org/f/Beta%20Releases/$version/"
+            :  "https://download.ledgersmb.org/f/Releases/$version/"
+        );
     my $http = HTTP::Tiny->new;
 
     do {
