@@ -1,5 +1,13 @@
 ---
 
+0.999.15    to be released
+   [Added]
+       * Command 'available' to list versions available for installation
+   [Fixed]
+       * Request precalculated dependencies including version number
+       * Fedora/RHEL/RockyLinux don't set VERSION_CODENAME, only VERSION_ID
+       * Fedora/RHEL/RockyLinux architecture not detected ($arch is empty)
+
 0.999.14    2026-08-18
    [Added]
        * Support for downloading and installing alpha, beta and release
