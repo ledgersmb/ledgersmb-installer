@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-version=$1
+version=${1:-}
 shift
 
 if [ -z "$version" ]
