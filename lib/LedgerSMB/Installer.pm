@@ -175,10 +175,7 @@ sub _compute_all_deps($class, $config) {
                     must => [
                         { term => { status => 'latest' } },
                         { terms => { provides => [ @last_deps ] } }
-                        ],
-                    filter => {
-                        match_all => {}
-                    }
+                    ],
                 }
             }
         };
@@ -191,6 +188,10 @@ sub _compute_all_deps($class, $config) {
             die "Unable to request module dependencies; POST request failed for https://fastapi.metacpan.org/v1/release/_search, response: $r->{status} - $r->{reason}";
         }
         my $hits = $json->decode($r->{content})->{hits};
+        if ($hits->{hits}->@* > 500) {
+            my $hit_count = scalar $hits->{hits}->@*;
+            warn "Unexpectedly high number of dependencies reported: $hit_count\nRequest body: $body\n";
+        }
 
         for my $release ($hits->{hits}->@*) {
             $dists{$release->{_source}->{distribution}} = 1;
