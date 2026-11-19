@@ -9,6 +9,7 @@ use File::Path qw( make_path remove_tree );
 use File::Spec;
 use HTTP::Tiny;
 use Log::Any qw($log);
+use Module::CPANfile;
 
 
 sub pg_config_extra_paths($self) {
@@ -79,10 +80,30 @@ sub cpanm_install($self, $installpath, $locallib, $unmapped_mods) {
 
     # install dependencies from 'cpanfile' because that includes
     # version range restrictions
-    my @deps_cmd = (@cmd, '--installdeps', $installpath);
-    $log->debug( "system(): " . join(' ', map { "'$_'" } @deps_cmd ) );
-    system(@deps_cmd) == 0
-        or croak $log->fatal( "Failure running cpanm - exit code: $?" );
+    my $cpanfile = Module::CPANfile->load(
+        File::Spec->catfile( $installpath, 'cpanfile' ) );
+    my $merged = $cpanfile->prereqs->merged_requirements(
+        [qw( configure build runtime )], ['requires'] );
+    my $deps = $merged->as_string_hash;
+    my @deps_input;
+    for my $mod (sort keys $deps->%*) {
+        next if $mod eq 'perl';
+        my $range = $deps->{$mod} // '0';
+        $range =~ s/\s+//g;
+        push @deps_input,
+            ($range eq '0' ? $mod : "$mod~$range");
+    }
+
+    my @deps_cmd = (@cmd, '-');
+    $log->debug( "open(): " . join(' ', map { "'$_'" } @deps_cmd ) );
+    my $pid = open( my $cpanm_in, '|-', @deps_cmd )
+        or croak $log->fatal( "Unable to run cpanm: $!" );
+    print $cpanm_in "$_\n" for @deps_input;
+    close( $cpanm_in );                  # waits for cpanm to finish
+    my $status = $?;
+    waitpid( $pid, 0 );                  # explicit; no-op when already reaped
+    $status == 0
+        or croak $log->fatal( "Failure running cpanm - exit code: $status" );
 
     # only install modules which were not satisfied from cpanfile
     # as fallback, because we're missing version range restrictions
